@@ -54,7 +54,7 @@ Creates a new Client object.  ARGS is a hash whose valid keys are:
 
 Mandatory.  The configuration file describing which repositories to
 monitor.  The format of the configuration is described in
-L</CONFIGURATION FILE>.
+L</"CONFIGURATION FILE">.
 
 =item * server
 
