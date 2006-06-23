@@ -153,6 +153,7 @@ sub send {
   my $serialized_reports = [ map { Dump($_) } @{$self->reports} ];
   my %request = (upload => 1, version => PROTO_VERSION,
                  reports => $serialized_reports);
+
   my $resp = $ua->post($self->server => \%request);
   if($resp->is_success) {
     if($resp->content =~ /^ok/) {

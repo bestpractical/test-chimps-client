@@ -77,7 +77,7 @@
 % foreach my $subcategory (keys %{$categories{$category}}) {
         <tr><th colspan="11" class="subcategory"><% $subcategory %></th></tr>
 % foreach my $report (@{$categories{$category}->{$subcategory}}) {
-% my $id = 5;
+% my $id = $report->{id};
 % my $data = $report->extra_data;
 % my $model = Test::TAP::Model::Visual->new_with_struct($report->model_structure);
           <tr>
@@ -86,8 +86,8 @@
               r<% $data->{revision} %>
             </td>
             <td class="leftsep"><% $data->{timestamp} %></td>
-            <td class="leftsep num"><% $data->{duration} %></td>
-            <td class="leftsep num"><% $model->total_ratio %>>&nbsp;%&nbsp;ok</td>
+            <td class="leftsep num"><% $data->{duration} %>&nbsp;sec</td>
+            <td class="leftsep num"><% $model->total_ratio * 100 %>%&nbsp;ok</td>
 	    <td class="leftsep num tests_total"><span title="<% $model->total_seen %> total"><% $model->total_seen %></span>:</td>
 	    <td class="num tests_ok"><span title="<% $model->total_ok %> ok"><% $model->total_ok %></span>,</td>
 	    <td class="num tests_failed"><span title="<% $model->total_failed %> failed"><% $model->total_failed %></span>,</td>
@@ -95,7 +95,7 @@
 	    <td class="num tests_skipped"><span title="<% $model->total_skipped %> skipped"><% $model->total_skipped %></span>,</td>
 	    <td class="num tests_unexpect"><span title="<% $model->total_unexpectedly_succeeded %> unexpectedly succeeded"><% $model->total_unexpectedly_succeeded %></span></td>
 	    <td><span title="Details" class="expander" onclick="toggle_visibility('<% $id %>')" id="expander_<% $id %>">&raquo;</span></td>
-	    <td><a style="text-decoration: none" href="<tmpl_var name=link>" title="Full smoke report">&raquo;</a></td>
+	    <td><a style="text-decoration: none" href="<% $report->{url} %>" title="Full smoke report">&raquo;</a></td>
           </tr>
           <tr class="details" id="details_<% $id %>">
             <td colspan="11" class="report_details">
@@ -106,7 +106,7 @@
                 <span class="tests_skipped"><% $model->total_skipped %> skipped</span> and
 		<span class="tests_unexpect"><% $model->total_unexpectedly_succeeded %> unexpectedly succeeded</span>
               <br />
-              <a href="<tmpl_var name=link>" title="Full smoke report">View full smoke report</a>
+              <a href="<% $report->{url} %>" title="Full smoke report">View full smoke report</a>
             </td>
           </tr>
 % }
@@ -117,6 +117,7 @@
 </html>
 
 <%args>
+$report_dir
 @reports
 </%args>
 
@@ -124,6 +125,6 @@
 my %categories;
 foreach my $report (@reports) {
   my $data = $report->extra_data;
-  $categories{$data->{category}}->{$data->{subcategory}} = $report;
+  push @{$categories{$data->{category}}->{$data->{subcategory}}}, $report;
 }
 </%init>

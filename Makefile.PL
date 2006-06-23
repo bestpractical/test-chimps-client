@@ -12,8 +12,6 @@ requires('Module::CoreList');
 requires('Params::Validate');
 requires('Test::TAP::HTMLMatrix');
 requires('Test::TAP::Model::Visual');
-requires('Time::Piece');
-requires('Time::Seconds');
 requires('YAML::Syck');
 
 

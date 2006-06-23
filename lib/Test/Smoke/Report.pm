@@ -93,12 +93,13 @@ sub _init {
     my $v;
     if (defined $args{extra_data}) {
       $v = Test::TAP::HTMLMatrix->new($args{model},
-                                         Dump($args{extra}));
+                                      Dump($args{extra_data}));
       $self->{extra_data} = $args{extra_data};
     } else {
       $v = Test::TAP::HTMLMatrix->new($args{model});
       $self->{extra_data} = '';
-    }      
+    }
+    $v->has_inline_css(1);
     $self->{report_text} = $v->detail_html;
   }
 }

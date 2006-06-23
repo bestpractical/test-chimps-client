@@ -3,17 +3,18 @@ package Test::Smoke::Report::Server;
 use warnings;
 use strict;
 
+use Test::Smoke::Report;
+
 use Algorithm::TokenBucket;
 use CGI::Carp   qw<fatalsToBrowser>;
 use CGI;
 use Digest::MD5 qw<md5_hex>;
+use File::Basename;
 use File::Spec;
 use Fcntl       qw<:DEFAULT :flock>;
 use HTML::Mason;
 use Params::Validate qw<:all>;
 use Storable    qw<store_fd fd_retrieve freeze>;
-use Time::Piece;
-use Time::Seconds;
 use YAML::Syck;
 
 use constant PROTO_VERSION => 0.1;
@@ -63,6 +64,12 @@ to 'bucket.dat'.
 Burst upload rate allowed (see L<Algorithm::Bucket>).  Defaults to
 5.
 
+=item * extra_validation_spec
+
+A hash reference of the form accepted by Params::Validate.  If
+supplied, this will be used to validate the extra data submitted to
+the server.
+
 =item * list_template
 
 Template filename under base_dir/template_dir to use for listing
@@ -92,12 +99,6 @@ Defaults to 'reports'.
 Directory under base_dir where html templates will be stored.
 Defaults to 'templates'.
 
-=item * validate_extra
-
-A hash reference in the form accepted by Params::Validate.  If
-supplied, this will be used to validate the extra data submitted to
-the server.
-
 =back
 
 =cut
@@ -106,7 +107,7 @@ the server.
   no strict 'refs';
   our @fields = qw/base_dir bucket_file max_rate max_size
                    max_smokes_per_subcategory report_dir
-                   template_dir list_template validate_extra/;
+                   template_dir list_template extra_validation_spec/;
 
   foreach my $field (@fields) {
     *{$field} =
@@ -144,6 +145,9 @@ sub _init {
          callbacks =>
          { "greater than or equal to 0" =>
            sub { $_[0] >= 0 }} },
+       extra_validation_spec =>
+       { type => HASHREF,
+         optional => 1 },
        list_template =>
        { type => SCALAR,
          optional => 1,
@@ -179,9 +183,6 @@ sub _init {
        template_dir =>
        { type => SCALAR,
          default => 'templates',
-         optional => 1 },
-       validate_extra =>
-       { type => HASHREF,
          optional => 1 }
      });
   
@@ -203,6 +204,8 @@ sub handle_request {
   my $cgi = CGI->new;
   if ($cgi->param("upload")) {
     $self->_process_upload($cgi);
+  } elsif ($cgi->param("id")) {
+    $self->_process_detail($cgi);
   } else {
     $self->_process_listing($cgi);
   }
@@ -305,6 +308,7 @@ sub _add_report {
     my $id = md5_hex $report;
 
     my $report_file = File::Spec->catfile($self->{base_dir},
+                                          $self->{report_dir},
                                           $id . ".yml");
     if (-e $report_file) {
       print  "One of the submitted reports was already submitted!";
@@ -324,24 +328,107 @@ sub _clean_old_reports {
   # XXX: stub
 }
 
+sub _process_detail {
+  my $self = shift;
+  my $cgi = shift;
+
+  print $cgi->header;
+  
+  my $id = $cgi->param("id");
+
+  unless ($id =~ m/^[a-f0-9]+$/i) {
+    print "Invalid id: $id";
+    exit;
+  }
+
+  my $report = LoadFile(File::Spec->catfile($self->{base_dir},
+                                          $self->{report_dir},
+                                          $id . ".yml"));
+
+  print $report->report_text;
+}
+
 sub _process_listing {
   my $self = shift;
   my $cgi = shift;
 
-  print $cgi->header("text/html");
+  print $cgi->header();
+
+  my @files = glob File::Spec->catfile($self->{base_dir},
+                                       $self->{report_dir},
+                                       "*.yml");
 
   my @reports = map { bless LoadFile($_), 'Test::Smoke::Report' }
-    glob File::Spec->catfile($self->{base_dir},
-                             $self->{report_dir},
-                             "*.yml");
+    @files;
 
+  for (my $i = 0; $i < scalar @reports ; $i++) {
+    my ($filename, $directories, $suffix) = fileparse($files[$i], '.yml');
+    $reports[$i]->{url} = $cgi->url . "?id=$filename";
+    $reports[$i]->{id} = $filename;
+  }
+  
   my $interp = HTML::Mason::Interp->new(comp_root =>
                                         File::Spec->catfile($self->{base_dir},
                                                             $self->{template_dir}));
-  $interp->exec(File::Spec->catfile('/' . $self->{list_template}),
+  $interp->exec(File::Spec->catfile(File::Spec->rootdir,
+                                    $self->{list_template}),
+                report_dir => $self->{http_report_dir},
                 reports => \@reports);
   
 }
 
+=head1 AUTHOR
+
+Zev Benjamin, C<< <zev at cpan.org> >>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to
+C<bug-test-smoke-report at rt.cpan.org>, or through the web interface at
+L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Test-Smoke-Report>.
+I will be notified, and then you'll automatically be notified of progress on
+your bug as I make changes.
+
+=head1 SUPPORT
+
+You can find documentation for this module with the perldoc command.
+
+    perldoc Test::Smoke::Report
+
+You can also look for information at:
+
+=over 4
+
+=item * AnnoCPAN: Annotated CPAN documentation
+
+L<http://annocpan.org/dist/Test-Smoke-Report>
+
+=item * CPAN Ratings
+
+L<http://cpanratings.perl.org/d/Test-Smoke-Report>
+
+=item * RT: CPAN's request tracker
+
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Test-Smoke-Report>
+
+=item * Search CPAN
+
+L<http://search.cpan.org/dist/Test-Smoke-Report>
+
+=back
+
+=head1 ACKNOWLEDGEMENTS
+
+The code in this distribution is based on smokeserv-client.pl and
+smokeserv-server.pl from the PUGS distribution.
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2006 Zev Benjamin, all rights reserved.
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+=cut
   
 1;

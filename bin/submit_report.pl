@@ -12,9 +12,18 @@ use Test::TAP::Model::Visual;
 
 chdir "jifty/trunk";
 
-my $model = Test::TAP::Model::Visual->new_with_tests(glob("t/*.t"));# t/*/t/*.t"));
+my $start_time = time;
+my $model = Test::TAP::Model::Visual->new_with_tests(glob("t/*.t t/*/t/*.t"));
+my $duration = time - $start_time;
 
-my $report = Test::Smoke::Report->new(model => $model);
+my $report = Test::Smoke::Report->new(model => $model,
+                                      extra_data =>
+                                      { category => 'Jifty',
+                                        subcategory => 'repository snapshot / Linux',
+                                        project => 'jifty',
+                                        revision => 5,
+                                        timestamp => scalar gmtime,
+                                        duration => $duration });
 
 my $client = Test::Smoke::Report::Client->new(reports => [$report],
                                               server => 'http://galvatron.mit.edu/cgi-bin/receive_report.pl');
