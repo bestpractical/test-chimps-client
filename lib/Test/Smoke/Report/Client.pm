@@ -84,11 +84,13 @@ sub new {
 
 sub _init {
   my $self = shift;
-  validate(@_,
-           { reports =>
-            { type => ARRAYREF },
-             server => 1,
-             compress => 0});
+  validate_with(params => \@_,
+                spec => 
+                { reports =>
+                  { type => ARRAYREF },
+                  server => 1,
+                  compress => 0},
+                called => 'The Test::Smoke::Report::Client constructor');
   
   my %args = @_;
   $self->{reports} = $args{reports};

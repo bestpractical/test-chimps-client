@@ -4,8 +4,9 @@ use warnings;
 use strict;
 
 use Carp;
-use Params::Validate;
+use Params::Validate qw/:all/;
 use Test::TAP::HTMLMatrix;
+use YAML::Syck;
 
 =head1 NAME
 
@@ -40,13 +41,26 @@ be used to generate the report.
 
 =head2 new ARGS
 
-Creates a new Report.  ARGS is a hash whose valid keys are C<model>
-and C<report_text>.  C<model> is mandatory and must be an instance
-of C<Test::Tap::Model>.  C<report_text> is an optional free-form
-report.  If not supplied, it is filled in using
-C<Test::TAP::HTMLMatrix>.  Note that if you are using this class in
-conjunction with C<Test::Smoke::Report::Server>, C<report_text>
-should probably be HTML.
+Creates a new Report.  ARGS is a hash whose valid keys are:
+
+=over 4
+
+=item * model
+Mandatory and must be an instance of C<Test::Tap::Model>.
+
+=item * report_text
+
+A free-form report.  If not supplied, it is filled in using
+C<Test::TAP::HTMLMatrix>, and C<extra_data> will be passed as the
+C<extra> argument to its constructor.  Note that if you are using
+this class in conjunction with C<Test::Smoke::Report::Server>,
+C<report_text> should probably be HTML.
+
+=item * extra_data
+
+Extra data to be transmitted with the report.  
+
+=back
 
 =cut
 
@@ -59,10 +73,16 @@ sub new {
 
 sub _init {
   my $self = shift;
-  validate(@_,
-           { model =>
-             { isa => 'Test::TAP::Model'},
-             report_text => 0 });
+  validate_with(params => \@_,
+                spec =>
+                { model =>
+                  {
+                   isa => 'Test::TAP::Model'},
+                  report_text => 0,
+                  extra_data =>
+                  { optional => 1,
+                    type => HASHREF } },
+                called => 'The Test::Smoke::Report constructor');
 
   my %args = @_;
 
@@ -70,7 +90,15 @@ sub _init {
   if (defined $args{report_text}) {
     $self->{report_text} = $args{report_text};
   } else {
-    my $v = Test::TAP::HTMLMatrix->new($args{model});
+    my $v;
+    if (defined $args{extra_data}) {
+      $v = Test::TAP::HTMLMatrix->new($args{model},
+                                         Dump($args{extra}));
+      $self->{extra_data} = $args{extra_data};
+    } else {
+      $v = Test::TAP::HTMLMatrix->new($args{model});
+      $self->{extra_data} = '';
+    }      
     $self->{report_text} = $v->detail_html;
   }
 }
@@ -95,6 +123,17 @@ Accessor for the report text.
 sub report_text {
   my $self = shift;
   return $self->{report_text};
+}
+
+=head2 extra_data
+
+Accessor for any extra data passed in.
+
+=cut
+
+sub extra_data {
+  my $self = shift;
+  return $self->{extra_data};
 }
 
 =head1 AUTHOR

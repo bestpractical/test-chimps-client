@@ -6,7 +6,7 @@ all_from        'lib/Test/Smoke/Report.pm';
 
 # Specific dependencies
 requires('Algorithm::TokenBucket');
-requires('HTML::Template');
+requires('HTML::Mason');
 requires('LWP::UserAgent');
 requires('Module::CoreList');
 requires('Params::Validate');
