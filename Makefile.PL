@@ -6,6 +6,7 @@ all_from        'lib/Test/Chimps.pm';
 
 # Specific dependencies
 requires('Algorithm::TokenBucket');
+requires('Class::Accessor');
 requires('Date::Parse');
 requires('DateTime');
 requires('HTML::Mason');

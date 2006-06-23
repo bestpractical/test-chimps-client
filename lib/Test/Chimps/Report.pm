@@ -46,6 +46,7 @@ Creates a new Report.  ARGS is a hash whose valid keys are:
 =over 4
 
 =item * model
+
 Mandatory and must be an instance of C<Test::Tap::Model>.
 
 =item * report_text
@@ -64,6 +65,14 @@ of which variables should be submitted is made by the server.
 =back
 
 =cut
+
+use base qw/Class::Accessor/;
+
+Test::Chimps::Report->mk_ro_accessors(
+  qw/model_structure
+    report_text report_variables/
+);
+
 
 sub new {
   my $class = shift;
@@ -105,38 +114,10 @@ sub _init {
   }
 }
 
-=head2 model_structure
+=head1 ACCESSORS
 
-Accessor for the passed-in model's structure.
-
-=cut
-
-sub model_structure {
-  my $self = shift;
-  return $self->{model_structure};
-}
-
-=head2 report_text
-
-Accessor for the report text.
-
-=cut
-
-sub report_text {
-  my $self = shift;
-  return $self->{report_text};
-}
-
-=head2 report_variables
-
-Accessor for any extra data passed in.
-
-=cut
-
-sub report_variables {
-  my $self = shift;
-  return $self->{report_variables};
-}
+There are read-only accessors for model_structure, report_text, and
+report_variables.
 
 =head1 AUTHOR
 

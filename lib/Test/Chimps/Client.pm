@@ -75,6 +75,10 @@ Mandatory.  The URI of the server script to upload the reports to.
 
 =cut
 
+use base qw/Class::Accessor/;
+
+Test::Chimps::Client->mk_ro_accessors(qw/reports server compress/);
+
 sub new {
   my $class = shift;
   my $obj = bless {}, $class;
@@ -100,39 +104,6 @@ sub _init {
   }
   $self->{server} = $args{server};
   $self->{compress} = $args{compress} || 0;
-}
-
-=head2 reports
-
-Accessor for the reports to be submitted.
-
-=cut
-
-sub reports {
-  my $self = shift;
-  return $self->{reports};
-}
-
-=head2 server
-
-Accessor for the submission server.
-
-=cut
-
-sub server {
-  my $self = shift;
-  return $self->{server};
-}
-
-=head2 compress
-
-Accessor for whether compression is turned on.
-
-=cut
-
-sub compress {
-  my $self = shift;
-  return $self->{compress};
 }
 
 =head2 send
@@ -165,6 +136,10 @@ sub send {
     return (0, $resp->status_line);
   }
 }
+
+=head1 ACCESSORS
+
+There are read-only accessors for compress, reports, and server.
 
 =head1 AUTHOR
 

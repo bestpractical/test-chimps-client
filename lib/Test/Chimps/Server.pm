@@ -103,20 +103,13 @@ submitted to the server.
 
 =cut
 
-{
-  no strict 'refs';
-  our @fields = qw/base_dir bucket_file max_rate max_size
-                   max_smokes_per_subcategory report_dir
-                   template_dir list_template variables_validation_spec/;
+use base qw/Class::Accessor/;
 
-  foreach my $field (@fields) {
-    *{$field} =
-      sub {
-        my $self = shift;
-        return $self->{$field};
-      };
-  }
-} 
+Test::Chimps::Server->mk_ro_accessors(
+  qw/base_dir bucket_file max_rate max_size
+    max_smokes_per_subcategory report_dir
+    template_dir list_template variables_validation_spec/
+);
 
 sub new {
   my $class = shift;
