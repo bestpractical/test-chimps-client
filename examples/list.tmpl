@@ -79,7 +79,7 @@
 % foreach my $report (sort by_revision_then_date
 %                          @{$categories{$category}->{$subcategory}}) {
 % my $id = $report->{id};
-% my $data = $report->extra_data;
+% my $data = $report->report_variables;
 % my $model = Test::TAP::Model::Visual->new_with_struct($report->model_structure);
           <tr>
             <td class="report_summary"><% $data->{project} %></td>
@@ -129,19 +129,19 @@ use Date::Parse;
 
 my %categories;
 foreach my $report (@reports) {
-  my $data = $report->extra_data;
+  my $data = $report->report_variables;
   push @{$categories{$data->{category}}->{$data->{subcategory}}}, $report;
 }
 
 sub by_revision_then_date {
-  my $res = $b->extra_data->{revision} <=> $a->extra_data->{revision};
+  my $res = $b->report_variables->{revision} <=> $a->report_variables->{revision};
 
   if ($res != 0) {
     return $res;
   }
   
-  my ($adate, $bdate) = (DateTime->from_epoch(epoch => str2time($a->extra_data->{timestamp})),
-                         DateTime->from_epoch(epoch => str2time($b->extra_data->{timestamp})));
+  my ($adate, $bdate) = (DateTime->from_epoch(epoch => str2time($a->report_variables->{timestamp})),
+                         DateTime->from_epoch(epoch => str2time($b->report_variables->{timestamp})));
   return DateTime->compare($bdate, $adate);
 }
 </%init>

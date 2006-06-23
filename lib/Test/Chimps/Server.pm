@@ -64,12 +64,6 @@ to 'bucket.dat'.
 Burst upload rate allowed (see L<Algorithm::Bucket>).  Defaults to
 5.
 
-=item * extra_validation_spec
-
-A hash reference of the form accepted by Params::Validate.  If
-supplied, this will be used to validate the extra data submitted to
-the server.
-
 =item * list_template
 
 Template filename under base_dir/template_dir to use for listing
@@ -99,6 +93,12 @@ Defaults to 'reports'.
 Directory under base_dir where html templates will be stored.
 Defaults to 'templates'.
 
+=item * variables_validation_spec
+
+A hash reference of the form accepted by Params::Validate.  If
+supplied, this will be used to validate the report variables
+submitted to the server.
+
 =back
 
 =cut
@@ -107,7 +107,7 @@ Defaults to 'templates'.
   no strict 'refs';
   our @fields = qw/base_dir bucket_file max_rate max_size
                    max_smokes_per_subcategory report_dir
-                   template_dir list_template extra_validation_spec/;
+                   template_dir list_template variables_validation_spec/;
 
   foreach my $field (@fields) {
     *{$field} =
@@ -145,7 +145,7 @@ sub _init {
          callbacks =>
          { "greater than or equal to 0" =>
            sub { $_[0] >= 0 }} },
-       extra_validation_spec =>
+       variables_validation_spec =>
        { type => HASHREF,
          optional => 1 },
        list_template =>
@@ -218,7 +218,7 @@ sub _process_upload {
   print $cgi->header("text/plain");
   $self->_limit_rate($cgi);
   $self->_validate_params($cgi);  
-  $self->_extra_validation_spec($cgi);
+  $self->_variables_validation_spec($cgi);
   $self->_add_report($cgi);
   $self->_clean_old_reports($cgi);
 
@@ -276,22 +276,22 @@ sub _validate_params {
 #  uncompress_smoke();
 }
 
-sub _extra_validation_spec {
+sub _variables_validation_spec {
   my $self = shift;
   my $cgi = shift;
   
   my @reports = map { Load($_) } $cgi->param("reports");
   
-  if (defined $self->{extra_validation_spec}) {
+  if (defined $self->{variables_validation_spec}) {
     foreach my $report (@reports) {
       eval {
-        validate(@{[%{$report->{extra_data}}]}, $self->{extra_validation_spec});
+        validate(@{[%{$report->{report_variables}}]}, $self->{variables_validation_spec});
       };
       if (defined $@ && $@) {
         # XXX: doesn't dump subroutines because we're using YAML::Syck
-        print "This server accepts extra parameters.  It's validation ",
-          "string looks like this:\n", Dump($self->{extra_validation_spec}),
-          "\nYour extra data looks like this:\n", Dump($report->{extra_data});
+        print "This server accepts specific report variables.  It's validation ",
+          "string looks like this:\n", Dump($self->{variables_validation_spec}),
+          "\nYour extra data looks like this:\n", Dump($report->{report_variables});
         exit;
       }
 

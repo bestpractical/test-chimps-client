@@ -15,7 +15,7 @@ my $model = Test::TAP::Model::Visual->new_with_tests(glob("t/*.t t/*/t/*.t"));
 my $duration = time - $start_time;
 
 my $report = Test::Chimps::Report->new(model => $model,
-                                       extra_data =>
+                                       report_variables =>
                                        { category => 'Jifty',
                                          subcategory => 'repository snapshot / Linux',
                                          project => 'jifty',

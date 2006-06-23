@@ -56,9 +56,10 @@ C<extra> argument to its constructor.  Note that if you are using
 this class in conjunction with C<Test::Chimps::Server>,
 C<report_text> should probably be HTML.
 
-=item * extra_data
+=item * report_variables
 
-Extra data to be transmitted with the report.  
+Report variables to be transmitted with the report.  The decision
+of which variables should be submitted is made by the server.
 
 =back
 
@@ -79,7 +80,7 @@ sub _init {
                   {
                    isa => 'Test::TAP::Model'},
                   report_text => 0,
-                  extra_data =>
+                  report_variables =>
                   { optional => 1,
                     type => HASHREF } },
                 called => 'The Test::Chimps::Report constructor');
@@ -91,13 +92,13 @@ sub _init {
     $self->{report_text} = $args{report_text};
   } else {
     my $v;
-    if (defined $args{extra_data}) {
+    if (defined $args{report_variables}) {
       $v = Test::TAP::HTMLMatrix->new($args{model},
-                                      Dump($args{extra_data}));
-      $self->{extra_data} = $args{extra_data};
+                                      Dump($args{report_variables}));
+      $self->{report_variables} = $args{report_variables};
     } else {
       $v = Test::TAP::HTMLMatrix->new($args{model});
-      $self->{extra_data} = '';
+      $self->{report_variables} = '';
     }
     $v->has_inline_css(1);
     $self->{report_text} = $v->detail_html;
@@ -126,15 +127,15 @@ sub report_text {
   return $self->{report_text};
 }
 
-=head2 extra_data
+=head2 report_variables
 
 Accessor for any extra data passed in.
 
 =cut
 
-sub extra_data {
+sub report_variables {
   my $self = shift;
-  return $self->{extra_data};
+  return $self->{report_variables};
 }
 
 =head1 AUTHOR

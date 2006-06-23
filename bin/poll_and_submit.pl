@@ -74,7 +74,7 @@ while (1) {
       @checkout_paths = ();
     
       my $report = Test::Chimps::Report->new(model => $model,
-                                             extra_data =>
+                                             report_variables =>
                                              { category => $project,
                                                subcategory => 'repository snapshot / ' . $Config{osname},
                                                project => scalar fileparse($config->{$project}->{svn_uri}),

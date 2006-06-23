@@ -3,7 +3,7 @@
 use Test::Chimps::Server;
 
 my $server = Test::Chimps::Server->new(base_dir => '/var/www/bps-smokes',
-                                       extra_validation_spec =>
+                                       variables_validation_spec =>
                                        { category => 1,
                                          subcategory => 1,
                                          project => 1,
