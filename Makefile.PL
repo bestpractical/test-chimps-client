@@ -12,12 +12,10 @@ requires('HTML::Mason');
 requires('LWP::UserAgent');
 requires('Module::CoreList');
 requires('Params::Validate');
+requires('Test::Dependencies');
 requires('Test::TAP::HTMLMatrix');
 requires('Test::TAP::Model::Visual');
 requires('YAML::Syck');
-
-
-no_index        'directory'         => 'demos';
 
 auto_install;
 WriteAll;
