@@ -3,6 +3,7 @@
 use warnings;
 use strict;
 
+use Config;
 use Test::Chimps::Report;
 use Test::Chimps::Client;
 use Test::TAP::Model::Visual;
@@ -65,7 +66,7 @@ while (1) {
     my $report = Test::Smoke::Report->new(model => $model,
                                           extra_data =>
                                           { category => $project,
-                                            subcategory => 'repository snapshot / Linux',
+                                            subcategory => 'repository snapshot / ' . $config{osname},
                                             project => scalar fileparse($config->{$project}->{svn_uri}),
                                             revision => $revision,
                                             author => $author,
