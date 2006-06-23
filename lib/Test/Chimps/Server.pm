@@ -176,7 +176,7 @@ sub _init {
          optional => 1 }
      });
   
-  foreach my $key (%args) {
+  foreach my $key (keys %args) {
     $self->{$key} = $args{$key};
   }
 }

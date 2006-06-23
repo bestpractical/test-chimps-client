@@ -16,8 +16,9 @@ my $r = Test::Chimps::Report->new(model => $m, report_text => "foo");
 
 my $reports = [$r];
 my $c = Test::Chimps::Client->new(reports => $reports,
-                                         server => 'bogus',
-                                         compress => 1);
+                                  server => 'bogus',
+                                  compress => 1);
+
 ok($c, "the client object is defined");
 isa_ok($c, 'Test::Chimps::Client', "and it's of the correct type");
 
