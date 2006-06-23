@@ -85,9 +85,10 @@
             <td>
               r<% $data->{revision} %>
             </td>
+            <td class="leftsep"><% $data->{author} %></td>
             <td class="leftsep"><% $data->{timestamp} %></td>
             <td class="leftsep num"><% $data->{duration} %>&nbsp;sec</td>
-            <td class="leftsep num"><% $model->total_ratio * 100 %>%&nbsp;ok</td>
+            <td class="leftsep num"><% sprintf("%.2f", $model->total_ratio * 100) %>%&nbsp;ok</td>
 	    <td class="leftsep num tests_total"><span title="<% $model->total_seen %> total"><% $model->total_seen %></span>:</td>
 	    <td class="num tests_ok"><span title="<% $model->total_ok %> ok"><% $model->total_ok %></span>,</td>
 	    <td class="num tests_failed"><span title="<% $model->total_failed %> failed"><% $model->total_failed %></span>,</td>

@@ -10,6 +10,7 @@ my $server = Test::Smoke::Report::Server->new(base_dir => '/var/www/bps-smokes',
                                                 subcategory => 1,
                                                 project => 1,
                                                 revision => 1,
+                                                author => 1,
                                                 timestamp => 1,
                                                 duration => 1 });
 
