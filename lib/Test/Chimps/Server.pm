@@ -105,7 +105,7 @@ submitted to the server.
 
 use base qw/Class::Accessor/;
 
-Test::Chimps::Server->mk_ro_accessors(
+__PACKAGE__->mk_ro_accessors(
   qw/base_dir bucket_file max_rate max_size
     max_smokes_per_subcategory report_dir
     template_dir list_template variables_validation_spec/

@@ -68,7 +68,7 @@ of which variables should be submitted is made by the server.
 
 use base qw/Class::Accessor/;
 
-Test::Chimps::Report->mk_ro_accessors(
+__PACKAGE__->mk_ro_accessors(
   qw/model_structure
     report_text report_variables/
 );

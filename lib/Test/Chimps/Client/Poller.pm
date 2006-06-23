@@ -71,8 +71,8 @@ file.
 =cut
 
 use base qw/Class::Accessor/;
-Test::Chimps::Client::Poller->mk_ro_accessors(qw/server config_file simulate/);
-Test::Chimps::Client::Poller->mk_accessors(
+__PACKAGE__->mk_ro_accessors(qw/server config_file simulate/);
+__PACKAGE__->mk_accessors(
   qw/_added_to_inc _added_to_env _checkout_paths _config/);
 
 # add a signal handler so destructor gets run
@@ -270,5 +270,144 @@ sub _revisions_match {
   return $latest_revision == $last_changed_revision;
 }
 
+=head1 ACCESSORS
+
+There are read-only accessors for server, config_file, simulate.
+
+=head1 CONFIGURATION FILE
+
+The configuration file is YAML dump of a hash.  The keys at the top
+level of the hash are project names.  Their values are hashes that
+comprise the configuration options for that project.
+
+Perhaps an example is best.  A typical configuration file might
+look like this:
+
+    --- 
+    Some-jifty-project: 
+      configure_cmd: perl Makefile.PL --skipdeps && make
+      dependencies: 
+        - Jifty
+      revision: 555
+      root_dir: trunk/foo
+      svn_uri: svn+ssh://svn.example.com/svn/foo
+    Jifty: 
+      configure_cmd: perl Makefile.PL --skipdeps && make
+      dependencies: 
+        - Jifty-DBI
+      revision: 1332
+      root_dir: trunk
+      svn_uri: svn+ssh://svn.jifty.org/svn/jifty.org/jifty
+    Jifty-DBI: 
+      configure_cmd: perl Makefile.PL --skipdeps && make
+      env: 
+        JDBI_TEST_MYSQL: jiftydbitestdb
+        JDBI_TEST_MYSQL_PASS: ''
+        JDBI_TEST_MYSQL_USER: jiftydbitest
+        JDBI_TEST_PG: jiftydbitestdb
+        JDBI_TEST_PG_USER: jiftydbitest
+      revision: 1358
+      root_dir: trunk
+      svn_uri: svn+ssh://svn.jifty.org/svn/jifty.org/Jifty-DBI
+    
+The supported project options are as follows:
+
+=over 4
+
+=item * configure_cmd
+
+The command to configure the project after checkout, but before
+running tests.
+
+=item * revision
+
+This is the last revision known for a given project.  When started,
+the poller will attempt to checkout and test all revisions (besides
+ones on which the directory did not change) between this one and
+HEAD.  When a test has been successfully uploaded, the revision
+number is updated and the configuration file is re-written.
+
+=item * root_dir
+
+The subdirectory inside the repository where configuration and
+testing commands should be run.
+
+=item * svn_uri
+
+The subversion URI of the project.
+
+=item * env
+
+A hash of environment variable names and values that are set before
+configuration, and unset after the tests have been run.
+
+=item * dependencies
+
+A list of project names that are dependencies for the given
+project.  All dependencies are checked out at HEAD, have their
+configuration commands run, and all dependencys' $root_dir/blib/lib
+directories are added to @INC before the configuration command for
+the project is run.
+
+=item * dependency_only
+
+Indicates that this project should not be tested.  It is only
+present to serve as a dependency for another project.
+
+=back
+
+=head1 AUTHOR
+
+Zev Benjamin, C<< <zev at cpan.org> >>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to
+C<bug-test-chimps at rt.cpan.org>, or through the web interface at
+L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Test-Chimps>.
+I will be notified, and then you'll automatically be notified of progress on
+your bug as I make changes.
+
+=head1 SUPPORT
+
+You can find documentation for this module with the perldoc command.
+
+    perldoc Test::Chimps
+
+You can also look for information at:
+
+=over 4
+
+=item * AnnoCPAN: Annotated CPAN documentation
+
+L<http://annocpan.org/dist/Test-Chimps>
+
+=item * CPAN Ratings
+
+L<http://cpanratings.perl.org/d/Test-Chimps>
+
+=item * RT: CPAN's request tracker
+
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Test-Chimps>
+
+=item * Search CPAN
+
+L<http://search.cpan.org/dist/Test-Chimps>
+
+=back
+
+=head1 ACKNOWLEDGEMENTS
+
+The code in this distribution is based on smokeserv-client.pl and
+smokeserv-server.pl from the PUGS distribution.
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2006 Zev Benjamin, all rights reserved.
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+=cut
 
 1;

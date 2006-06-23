@@ -77,7 +77,7 @@ Mandatory.  The URI of the server script to upload the reports to.
 
 use base qw/Class::Accessor/;
 
-Test::Chimps::Client->mk_ro_accessors(qw/reports server compress/);
+__PACKAGE__->mk_ro_accessors(qw/reports server compress/);
 
 sub new {
   my $class = shift;
