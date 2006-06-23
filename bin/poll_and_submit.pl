@@ -3,8 +3,6 @@
 use warnings;
 use strict;
 
-use lib '/home/zev/bps/Test-Chimps/trunk/lib';
-
 use Test::Chimps::Client::Poller;
   
 my $poller = Test::Chimps::Client::Poller->new(
