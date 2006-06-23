@@ -12,6 +12,11 @@ our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
+Why run tests yourself?  Let an infinite number of monkeys do it
+for you!  Take the monkey work out of testing.  Remove the monkey
+wrench from your development process.  Will the monkey jokes ever
+end?  No!  We really are more fun than a barrel full of monkeys!
+
 The Collaborative Heterogeneous Infinite Monkey Perfectionification
 Service (CHIMPS) is a generalized testing framework designed to
 make integration testing easy.  You use L<Test::Chimps::Server> to
