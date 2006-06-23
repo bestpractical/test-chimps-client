@@ -1,0 +1,6 @@
+Revision history for Test-Smoke-Report
+
+0.01    Fri Jun 16 13:21:11 EDT 2006
+        First revision.  Test::Smoke::Report and
+        Test::Smoke::Report::Client are both functional.
+

@@ -1,0 +1,44 @@
+Test-Smoke-Report
+
+This module modularizes the pugs smoke server/client
+(smokeserv-client.pl and smokeserv-server.pl).  It also makes the
+code more generic so that other groups can take advantage of the
+simple but powerful smoke server. It will provide scripts to
+replicate pugs' scripts behavior in a more generic fashion.
+
+INSTALLATION
+
+To install this module, run the following commands:
+
+    perl Makefile.PL
+    make
+    make test
+    make install
+
+
+SUPPORT AND DOCUMENTATION
+
+After installing, you can find documentation for this module with the perldoc command.
+
+    perldoc Test::Smoke::Report
+
+You can also look for information at:
+
+    Search CPAN
+        http://search.cpan.org/dist/Test-Smoke-Report
+
+    CPAN Request Tracker:
+        http://rt.cpan.org/NoAuth/Bugs.html?Dist=Test-Smoke-Report
+
+    AnnoCPAN, annotated CPAN documentation:
+        http://annocpan.org/dist/Test-Smoke-Report
+
+    CPAN Ratings:
+        http://cpanratings.perl.org/d/Test-Smoke-Report
+
+COPYRIGHT AND LICENCE
+
+Copyright (C) 2006 Zev Benjamin
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
