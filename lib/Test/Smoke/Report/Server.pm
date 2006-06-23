@@ -218,7 +218,7 @@ sub _process_upload {
   print $cgi->header("text/plain");
   $self->_limit_rate($cgi);
   $self->_validate_params($cgi);  
-  $self->_validate_extra($cgi);
+  $self->_extra_validation_spec($cgi);
   $self->_add_report($cgi);
   $self->_clean_old_reports($cgi);
 
@@ -276,21 +276,22 @@ sub _validate_params {
 #  uncompress_smoke();
 }
 
-sub _validate_extra {
+sub _extra_validation_spec {
   my $self = shift;
   my $cgi = shift;
   
   my @reports = map { Load($_) } $cgi->param("reports");
   
-  if (defined $self->{validate_extra}) {
+  if (defined $self->{extra_validation_spec}) {
     foreach my $report (@reports) {
       eval {
-        validate(@{$report->{extra_data}}, $self->{validate_extra});
+        validate(@{[%{$report->{extra_data}}]}, $self->{extra_validation_spec});
       };
-      if ($@) {
+      if (defined $@ && $@) {
         # XXX: doesn't dump subroutines because we're using YAML::Syck
         print "This server accepts extra parameters.  It's validation ",
-          "string looks like this:\n", Dump($self->{validate_extra});
+          "string looks like this:\n", Dump($self->{extra_validation_spec}),
+          "\nYour extra data looks like this:\n", Dump($report->{extra_data});
         exit;
       }
 

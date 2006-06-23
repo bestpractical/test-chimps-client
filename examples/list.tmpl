@@ -72,11 +72,12 @@
   </p>
  
   <table>
-% foreach my $category (keys %categories) {
+% foreach my $category (sort keys %categories) {
       <tr><th colspan="11" class="category"><% $category %></th></tr>
-% foreach my $subcategory (keys %{$categories{$category}}) {
+% foreach my $subcategory (sort keys %{$categories{$category}}) {
         <tr><th colspan="11" class="subcategory"><% $subcategory %></th></tr>
-% foreach my $report (@{$categories{$category}->{$subcategory}}) {
+% foreach my $report (sort by_revision_then_date
+%                          @{$categories{$category}->{$subcategory}}) {
 % my $id = $report->{id};
 % my $data = $report->extra_data;
 % my $model = Test::TAP::Model::Visual->new_with_struct($report->model_structure);
@@ -123,9 +124,24 @@ $report_dir
 </%args>
 
 <%init>
+use DateTime;
+use Date::Parse;
+
 my %categories;
 foreach my $report (@reports) {
   my $data = $report->extra_data;
   push @{$categories{$data->{category}}->{$data->{subcategory}}}, $report;
+}
+
+sub by_revision_then_date {
+  my $res = $b->extra_data->{revision} <=> $a->extra_data->{revision};
+
+  if ($res != 0) {
+    return $res;
+  }
+  
+  my ($adate, $bdate) = (DateTime->from_epoch(epoch => str2time($a->extra_data->{timestamp})),
+                         DateTime->from_epoch(epoch => str2time($b->extra_data->{timestamp})));
+  return DateTime->compare($bdate, $adate);
 }
 </%init>
