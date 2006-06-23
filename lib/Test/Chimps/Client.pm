@@ -25,8 +25,8 @@ our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
-This module simplifies the process of sending
-C<Test::Chimps>s to a smoke server.
+This module simplifies the process of sending C<Test::Chimps::Report>s to a
+smoke server.
 
     use Test::Chimps::Report;
     use Test::Chimps::Client;
@@ -57,6 +57,10 @@ Creates a new Client object.  ARGS is a hash whose valid keys are:
 
 =over 4
 
+=item * compress
+
+Optional.  Does not currently work
+
 =item * reports
 
 Mandatory.  The value must be an array reference which contains
@@ -66,10 +70,6 @@ submitted to the server.
 =item * server
 
 Mandatory.  The URI of the server script to upload the reports to.
-
-=item * compress
-
-Optional.  Does not currently work
 
 =back
 
