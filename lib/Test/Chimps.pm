@@ -1,6 +1,6 @@
 =head1 NAME
 
-Test::Chimps - Collaborative Heterogeneous Infinite Monkey Perfection Service
+Test::Chimps - Collaborative Heterogeneous Infinite Monkey Perfectionification Service
 
 =head1 VERSION
 
@@ -12,11 +12,11 @@ our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
-The Collaborative Heterogeneous Infinite Monkey Perfection Service
-(CHIMPS) is a generalized testing framework designed to make
-integration testing easy.  You use L<Test::Chimps::Server> to
-create your CGI script for viewing and submitting reports, and
-you use L<Test::Chimps::Client> for submitting reports.  You will find
+The Collaborative Heterogeneous Infinite Monkey Perfectionification
+Service (CHIMPS) is a generalized testing framework designed to
+make integration testing easy.  You use L<Test::Chimps::Server> to
+create your CGI script for viewing and submitting reports, and you
+use L<Test::Chimps::Client> for submitting reports.  You will find
 some scripts in the examples directory which should get you
 started.
 
