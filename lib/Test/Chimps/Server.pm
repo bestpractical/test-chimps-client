@@ -173,9 +173,6 @@ sub _init {
          callbacks =>
          { "greater than or equal to 0" =>
            sub { $_[0] >= 0 }} },
-       pre_add_hook =>
-       { type => CODEREF,
-         optional => 1 },
        report_dir =>
        { type => SCALAR,
          default => 'reports',
