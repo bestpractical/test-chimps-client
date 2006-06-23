@@ -31,14 +31,20 @@ while (1) {
     my $info_out = `svn info $config->{$project}->{svn_uri}`;
     $info_out =~ m/Revision: (\d+)/;
     my $latest_revision = $1;
+    $info_out =~ m/Last Changed Revision: (\d+)/;
+    my $last_changed_revision = $1;
     $info_out =~ m/Last Changed Author: (\w+)/;
     my $author = $1;
 
     my $old_revision = $config->{$project}->{revision};
 
-    next unless $latest_revision > $old_revision;
+    next unless $last_changed_revision > $old_revision;
 
     foreach my $revision (($old_revision + 1) .. $latest_revision) {
+      # only actually do the check out if the revision and last changed revision match for
+      # a particular revision
+      next unless revisions_match($config->{$project}->{svn_uri}, $revision);
+      
       $config->{$project}->{revision} = $revision;
 
       checkout_project($config->{$project}, $revision);
@@ -66,18 +72,18 @@ while (1) {
       }
       @checkout_paths = ();
     
-      my $report = Test::Smoke::Report->new(model => $model,
-                                            extra_data =>
-                                            { category => $project,
-                                              subcategory => 'repository snapshot / ' . $Config{osname},
-                                              project => scalar fileparse($config->{$project}->{svn_uri}),
-                                              revision => $revision,
-                                              author => $author,
-                                              timestamp => scalar gmtime,
-                                              duration => $duration});
+      my $report = Test::Chimps::Report->new(model => $model,
+                                             extra_data =>
+                                             { category => $project,
+                                               subcategory => 'repository snapshot / ' . $Config{osname},
+                                               project => scalar fileparse($config->{$project}->{svn_uri}),
+                                               revision => $revision,
+                                               author => $author,
+                                               timestamp => scalar gmtime,
+                                               duration => $duration});
 
-      my $client = Test::Smoke::Report::Client->new(reports => [$report],
-                                                    server => 'http://galvatron.mit.edu/cgi-bin/report_server.pl');
+      my $client = Test::Chimps::Client->new(reports => [$report],
+                                             server => 'http://galvatron.mit.edu/cgi-bin/report_server.pl');
 
       my ($status, $msg) = $client->send;
 
@@ -141,4 +147,17 @@ sub remove_tmpdir {
   my $tmpdir = shift;
   print "removing temporary directory $tmpdir\n";
   rmtree($tmpdir, 0, 0);
+}
+
+sub revisions_match {
+  my $uri = shift;
+  my $revision = shift;
+
+  my $info_out = `svn info -r $revision $uri`;
+  $info_out =~ m/Revision: (\d+)/;
+  my $latest_revision = $1;
+  $info_out =~ m/Last Changed Revision: (\d+)/;
+  my $last_changed_revision = $1;
+
+  return $latest_revision == $last_changed_revision;
 }
