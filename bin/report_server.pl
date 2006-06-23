@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 use lib '/home/zev/bps/Test-Smoke-Report/trunk/lib';
 
