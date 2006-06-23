@@ -12,7 +12,7 @@ BEGIN {
 my $m = Test::TAP::Model::Visual->new_with_tests('t/bogus-tests/00-basic.t');
 
 # Test::Harness::Straps breaks under taint mode, so Test::TAP::Model also breaks
-my $r = Test::Smoke::Report->new(model => $m, report_text => "foo");
+my $r = Test::Chimps::Report->new(model => $m, report_text => "foo");
 
 my $reports = [$r];
 my $c = Test::Chimps::Client->new(reports => $reports,

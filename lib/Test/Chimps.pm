@@ -15,8 +15,8 @@ our $VERSION = '0.01';
 The Collaborative Heterogeneous Infinite Monkey Perfection Service
 (CHIMPS) is a generalized testing framework designed to make
 integration testing easy.  You use L<Test::Chimps::Server> to
-create your CGI script for viewing and submitting reports, and you
-use L<Test::Chimps::Client> for submitting reports.  You will find
+create your CGI script for viewing and submitting reports, and
+you use L<Test::Chimps::Client> for submitting reports.  You will find
 some scripts in the examples directory which should get you
 started.
 

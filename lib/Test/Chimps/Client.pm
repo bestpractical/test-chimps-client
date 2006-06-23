@@ -95,8 +95,8 @@ sub _init {
   my %args = @_;
   $self->{reports} = $args{reports};
   foreach my $report (@{$self->{reports}}) {
-    croak "one the the specified reports is not a Test::Chimps"
-      if ! (ref $report && $report->isa('Test::Chimps'));
+    croak "one the the specified reports is not a Test::Chimps::Report"
+      if ! (ref $report && $report->isa('Test::Chimps::Report'));
   }
   $self->{server} = $args{server};
   $self->{compress} = $args{compress} || 0;
