@@ -26,7 +26,7 @@ my $report = Test::Smoke::Report->new(model => $model,
                                         duration => $duration });
 
 my $client = Test::Smoke::Report::Client->new(reports => [$report],
-                                              server => 'http://galvatron.mit.edu/cgi-bin/receive_report.pl');
+                                              server => 'http://galvatron.mit.edu/cgi-bin/report_server.pl');
 
 my ($status, $msg) = $client->send;
 
