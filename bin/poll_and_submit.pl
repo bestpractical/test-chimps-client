@@ -7,7 +7,7 @@ use Test::Chimps::Client::Poller;
   
 my $poller = Test::Chimps::Client::Poller->new(
   server      => 'http://smoke.bestpractical.com/cgi-bin/report_server.pl',
-  config_file => "$ENV{USER}/poll-config.yml",
+  config_file => "$ENV{HOME}/poll-config.yml",
   simulate    => 1
 );
 
