@@ -1,0 +1,12 @@
+* add options to to Poll
+* move Poll to SVN::Client
+* document variable requirements
+* move Server to a db
+* limit display
+* move repo
+* change category/subcategory handling
+* add command line switches to binaries?
+* fix ENV handling
+* add HTML::Scrubber
+* allow single test comparison back through revisions
+* add option defaults to Poller

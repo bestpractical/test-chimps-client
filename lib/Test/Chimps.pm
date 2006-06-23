@@ -25,6 +25,39 @@ use L<Test::Chimps::Client> for submitting reports.  You will find
 some scripts in the examples directory which should get you
 started.
 
+=head1 PHILOSOPHY
+
+Tests are good.  Testing is easy thanks to modules like
+L<Test::Simple> and L<Test::More>.  However, it's easy to forget to
+run C<make test> every time you commit.  Worse, you might have
+forgotten to add a file that will cause tests to fail on a freshly
+checked out copy.  Additionally, your tests might only pass on your
+version of perl or with specific module versions.
+
+Chimps aims to solve these problems.  However, it tries to make as
+few assumptions about how your integration testing architecture
+should work as possible.  Want to allow anyone to submit smoke
+reports?  Just write a wrapper around C<Test::Chimps::Client>.
+Want to have dedicated build hosts that continuously check out and
+test projects?  Just use C<Test::Chimps::Client::Poller>.  Whatever
+your integration testing architecture, you can probably use Chimps
+to simplify the process.
+
+=head1 REPORT VARIABLES
+
+Chimps does not make any assumptions about what kind of data is
+carried in your smoke reports.  These data are called I<report
+variables>.  When creating a server with C<Test::Chimps::Server>,
+you can specify which variables must be submitted with each
+report.  Unfortunately, if we I<never> made any assumptions, it
+would be hard to write any utility code.  Therefore, several Chimps
+modules have documentation sections describing variables that it
+assumes are passed to the server.  These are probably pretty
+reasonable assumptions for most set ups.  However, if they do not
+meet your needs, it should be fairly easy to subclass the
+appropriate classes and add the functionality and variables you
+require.
+
 =head1 AUTHOR
 
 Zev Benjamin, C<< <zev at cpan.org> >>
