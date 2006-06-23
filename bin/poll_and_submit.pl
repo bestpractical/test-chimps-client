@@ -48,7 +48,8 @@ while (1) {
       $config->{$project}->{revision} = $revision;
 
       checkout_project($config->{$project}, $revision);
-    
+
+      print "running tests for $project\n";
       my $start_time = time;
       my $model = Test::TAP::Model::Visual->new_with_tests(glob("t/*.t t/*/t/*.t"));
       my $duration = time - $start_time;
