@@ -34,11 +34,11 @@ while (1) {
     $info_out =~ m/Last Changed Author: (\w+)/;
     my $author = $1;
 
-    my $old_revision = $config->{$project}->{revision}
+    my $old_revision = $config->{$project}->{revision};
 
     next unless $latest_revision > $old_revision;
 
-    foreach my $revision (($old_revision + 1) .. $revision) {
+    foreach my $revision (($old_revision + 1) .. $latest_revision) {
       $config->{$project}->{revision} = $revision;
 
       checkout_project($config->{$project}, $revision);
@@ -69,7 +69,7 @@ while (1) {
       my $report = Test::Smoke::Report->new(model => $model,
                                             extra_data =>
                                             { category => $project,
-                                              subcategory => 'repository snapshot / ' . $config{osname},
+                                              subcategory => 'repository snapshot / ' . $Config{osname},
                                               project => scalar fileparse($config->{$project}->{svn_uri}),
                                               revision => $revision,
                                               author => $author,
