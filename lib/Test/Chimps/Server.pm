@@ -343,8 +343,8 @@ sub _process_detail {
   }
 
   my $report = LoadFile(File::Spec->catfile($self->{base_dir},
-                                          $self->{report_dir},
-                                          $id . ".yml"));
+                                            $self->{report_dir},
+                                            $id . ".yml"));
 
   print $report->report_text;
 }
@@ -359,8 +359,7 @@ sub _process_listing {
                                        $self->{report_dir},
                                        "*.yml");
 
-  my @reports = map { bless LoadFile($_), 'Test::Chimps::Report' }
-    @files;
+  my @reports = map { LoadFile($_) } @files;
 
   for (my $i = 0; $i < scalar @reports ; $i++) {
     my ($filename, $directories, $suffix) = fileparse($files[$i], '.yml');

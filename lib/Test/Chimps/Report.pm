@@ -33,7 +33,7 @@ be used to generate the report.
 
     my $model = Test::TAP::Model::Visual->new_with_tests(glob("t/*.t"));
 
-    my $report = Test::Smoke::Report->new(model => $model);
+    my $report = Test::Chimps::Report->new(model => $model);
 
     ...
 
