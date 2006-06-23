@@ -1,11 +1,11 @@
-package Test::Smoke::Report::Client;
+package Test::Chimps::Client;
 
 use warnings;
 use strict;
 
 use Carp;
 use Params::Validate qw/:all/;
-use Test::Smoke::Report;
+use Test::Chimps;
 use LWP::UserAgent;
 use YAML::Syck;
 
@@ -13,7 +13,7 @@ use constant PROTO_VERSION => 0.1;
 
 =head1 NAME
 
-Test::Smoke::Report::Client - Send a Test::Smoke::Report to a server
+Test::Chimps::Client - Send a Test::Chimps::Report to a server
 
 =head1 VERSION
 
@@ -26,20 +26,20 @@ our $VERSION = '0.01';
 =head1 SYNOPSIS
 
 This module simplifies the process of sending
-C<Test::Smoke::Report>s to a smoke server.
+C<Test::Chimps>s to a smoke server.
 
-    use Test::Smoke::Report;
-    use Test::Smoke::Report::Client;
+    use Test::Chimps::Report;
+    use Test::Chimps::Client;
     use Test::TAP::Model::Visual;
 
     chdir "some/module/directory";
 
     my $model = Test::TAP::Model::Visual->new_with_tests(glob("t/*.t"));
 
-    my $report = Test::Smoke::Report->new(model => $model);
+    my $report = Test::Chimps::Report->new(model => $model);
 
-    my $client = Test::Smoke::Report::Client->new(reports => [$report],
-                                                  server => 'http://www.example.com/cgi-bin/smoke-server.pl');
+    my $client = Test::Chimps::Client->new(reports => [$report],
+                                           server => 'http://www.example.com/cgi-bin/smoke-server.pl');
     
     my ($status, $msg) = $client->send;
     
@@ -60,7 +60,7 @@ Creates a new Client object.  ARGS is a hash whose valid keys are:
 =item * reports
 
 Mandatory.  The value must be an array reference which contains
-C<Test::Smoke::Report>s.  These are the reports that will be
+C<Test::Chimps>s.  These are the reports that will be
 submitted to the server.
 
 =item * server
@@ -90,13 +90,13 @@ sub _init {
                   { type => ARRAYREF },
                   server => 1,
                   compress => 0},
-                called => 'The Test::Smoke::Report::Client constructor');
+                called => 'The Test::Chimps::Client constructor');
   
   my %args = @_;
   $self->{reports} = $args{reports};
   foreach my $report (@{$self->{reports}}) {
-    croak "one the the specified reports is not a Test::Smoke::Report"
-      if ! (ref $report && $report->isa('Test::Smoke::Report'));
+    croak "one the the specified reports is not a Test::Chimps"
+      if ! (ref $report && $report->isa('Test::Chimps'));
   }
   $self->{server} = $args{server};
   $self->{compress} = $args{compress} || 0;
@@ -147,7 +147,7 @@ sub send {
   my $self = shift;
   
   my $ua = LWP::UserAgent->new;
-  $ua->agent("Test-Smoke-Report-Client/" . PROTO_VERSION);
+  $ua->agent("Test-Chimps-Client/" . PROTO_VERSION);
   $ua->env_proxy;
 
   my $serialized_reports = [ map { Dump($_) } @{$self->reports} ];
@@ -173,8 +173,8 @@ Zev Benjamin, C<< <zev at cpan.org> >>
 =head1 BUGS
 
 Please report any bugs or feature requests to
-C<bug-test-smoke-report at rt.cpan.org>, or through the web interface at
-L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Test-Smoke-Report>.
+C<bug-test-chimps at rt.cpan.org>, or through the web interface at
+L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Test-Chimps>.
 I will be notified, and then you'll automatically be notified of progress on
 your bug as I make changes.
 
@@ -182,7 +182,7 @@ your bug as I make changes.
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Test::Smoke::Report
+    perldoc Test::Chimps
 
 You can also look for information at:
 
@@ -190,19 +190,19 @@ You can also look for information at:
 
 =item * AnnoCPAN: Annotated CPAN documentation
 
-L<http://annocpan.org/dist/Test-Smoke-Report>
+L<http://annocpan.org/dist/Test-Chimps>
 
 =item * CPAN Ratings
 
-L<http://cpanratings.perl.org/d/Test-Smoke-Report>
+L<http://cpanratings.perl.org/d/Test-Chimps>
 
 =item * RT: CPAN's request tracker
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Test-Smoke-Report>
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Test-Chimps>
 
 =item * Search CPAN
 
-L<http://search.cpan.org/dist/Test-Smoke-Report>
+L<http://search.cpan.org/dist/Test-Chimps>
 
 =back
 

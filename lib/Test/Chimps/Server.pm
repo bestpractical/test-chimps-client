@@ -1,9 +1,9 @@
-package Test::Smoke::Report::Server;
+package Test::Chimps::Server;
 
 use warnings;
 use strict;
 
-use Test::Smoke::Report;
+use Test::Chimps::Report;
 
 use Algorithm::TokenBucket;
 use CGI::Carp   qw<fatalsToBrowser>;
@@ -21,7 +21,7 @@ use constant PROTO_VERSION => 0.1;
 
 =head1 NAME
 
-Test::Smoke::Report::Server - Accept smoke report uploads and display smoke reports
+Test::Chimps::Server - Accept smoke report uploads and display smoke reports
 
 =head1 VERSION
 
@@ -34,11 +34,11 @@ our $VERSION = '0.01';
 =head1 SYNOPSIS
 
 This module simplifies the process of running a smoke server.  It
-is meant to be used with Test::Smoke::Report::Client.
+is meant to be used with Test::Chimps::Client.
 
-    use Test::Smoke::Report::Server;
+    use Test::Chimps::Server;
 
-    my $server = Test::Smoke::Report::Server->new(base_dir => '/var/www/smokes');
+    my $server = Test::Chimps::Server->new(base_dir => '/var/www/smokes');
 
     $server->handle_request;
 
@@ -129,7 +129,7 @@ sub _init {
   my $self = shift;
   my %args = validate_with
     (params => \@_,
-     called => 'The Test::Smoke::Report::Server constructor',
+     called => 'The Test::Chimps::Server constructor',
      spec => 
      { base_dir =>
        { type => SCALAR,
@@ -359,7 +359,7 @@ sub _process_listing {
                                        $self->{report_dir},
                                        "*.yml");
 
-  my @reports = map { bless LoadFile($_), 'Test::Smoke::Report' }
+  my @reports = map { bless LoadFile($_), 'Test::Chimps::Report' }
     @files;
 
   for (my $i = 0; $i < scalar @reports ; $i++) {
@@ -385,8 +385,8 @@ Zev Benjamin, C<< <zev at cpan.org> >>
 =head1 BUGS
 
 Please report any bugs or feature requests to
-C<bug-test-smoke-report at rt.cpan.org>, or through the web interface at
-L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Test-Smoke-Report>.
+C<bug-test-chimps at rt.cpan.org>, or through the web interface at
+L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Test-Chimps>.
 I will be notified, and then you'll automatically be notified of progress on
 your bug as I make changes.
 
@@ -394,7 +394,7 @@ your bug as I make changes.
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Test::Smoke::Report
+    perldoc Test::Chimps
 
 You can also look for information at:
 
@@ -402,19 +402,19 @@ You can also look for information at:
 
 =item * AnnoCPAN: Annotated CPAN documentation
 
-L<http://annocpan.org/dist/Test-Smoke-Report>
+L<http://annocpan.org/dist/Test-Chimps>
 
 =item * CPAN Ratings
 
-L<http://cpanratings.perl.org/d/Test-Smoke-Report>
+L<http://cpanratings.perl.org/d/Test-Chimps>
 
 =item * RT: CPAN's request tracker
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Test-Smoke-Report>
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Test-Chimps>
 
 =item * Search CPAN
 
-L<http://search.cpan.org/dist/Test-Smoke-Report>
+L<http://search.cpan.org/dist/Test-Chimps>
 
 =back
 

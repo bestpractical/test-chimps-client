@@ -1,8 +1,8 @@
 use inc::Module::Install;
 
 # Define metadata
-name            'Test-Smoke-Report';
-all_from        'lib/Test/Smoke/Report.pm';
+name            'Test-Chimps';
+all_from        'lib/Test/Chimps.pm';
 
 # Specific dependencies
 requires('Algorithm::TokenBucket');

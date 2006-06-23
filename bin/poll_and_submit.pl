@@ -3,8 +3,8 @@
 use warnings;
 use strict;
 
-use Test::Smoke::Report;
-use Test::Smoke::Report::Client;
+use Test::Chimps::Report;
+use Test::Chimps::Client;
 use Test::TAP::Model::Visual;
 use YAML::Syck;
 use File::Basename;

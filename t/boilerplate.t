@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 3;
+use Test::More tests => 5;
 
 sub not_in_file_ok {
     my ($filename, %regex) = @_;
@@ -45,4 +45,6 @@ sub module_boilerplate_ok {
     );
 }
 
-module_boilerplate_ok('lib/Test/Smoke/Report.pm');
+module_boilerplate_ok('lib/Test/Chimps/Report.pm');
+module_boilerplate_ok('lib/Test/Chimps/Client.pm');
+module_boilerplate_ok('lib/Test/Chimps/Server.pm');

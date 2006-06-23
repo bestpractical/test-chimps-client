@@ -1,4 +1,4 @@
-package Test::Smoke::Report;
+package Test::Chimps::Report;
 
 use warnings;
 use strict;
@@ -10,7 +10,7 @@ use YAML::Syck;
 
 =head1 NAME
 
-Test::Smoke::Report - Encapsulate a smoke test report
+Test::Chimps::Report - Encapsulate a smoke test report
 
 =head1 VERSION
 
@@ -26,7 +26,7 @@ This module encapsulates a L<Test::TAP::Model>'s structure and a
 freeform report text.  If not provided, Test::TAP::HTMLMatrix will
 be used to generate the report.
 
-    use Test::Smoke::Report;
+    use Test::Chimps::Report;
     use Test::TAP::Model::Visual;
 
     chdir "some/module/directory";
@@ -53,7 +53,7 @@ Mandatory and must be an instance of C<Test::Tap::Model>.
 A free-form report.  If not supplied, it is filled in using
 C<Test::TAP::HTMLMatrix>, and C<extra_data> will be passed as the
 C<extra> argument to its constructor.  Note that if you are using
-this class in conjunction with C<Test::Smoke::Report::Server>,
+this class in conjunction with C<Test::Chimps::Server>,
 C<report_text> should probably be HTML.
 
 =item * extra_data
@@ -82,7 +82,7 @@ sub _init {
                   extra_data =>
                   { optional => 1,
                     type => HASHREF } },
-                called => 'The Test::Smoke::Report constructor');
+                called => 'The Test::Chimps::Report constructor');
 
   my %args = @_;
 
@@ -144,8 +144,8 @@ Zev Benjamin, C<< <zev at cpan.org> >>
 =head1 BUGS
 
 Please report any bugs or feature requests to
-C<bug-test-smoke-report at rt.cpan.org>, or through the web interface at
-L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Test-Smoke-Report>.
+C<bug-test-chimps at rt.cpan.org>, or through the web interface at
+L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Test-Chimps>.
 I will be notified, and then you'll automatically be notified of progress on
 your bug as I make changes.
 
@@ -153,7 +153,7 @@ your bug as I make changes.
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Test::Smoke::Report
+    perldoc Test::Chimps
 
 You can also look for information at:
 
@@ -161,26 +161,26 @@ You can also look for information at:
 
 =item * AnnoCPAN: Annotated CPAN documentation
 
-L<http://annocpan.org/dist/Test-Smoke-Report>
+L<http://annocpan.org/dist/Test-Chimps>
 
 =item * CPAN Ratings
 
-L<http://cpanratings.perl.org/d/Test-Smoke-Report>
+L<http://cpanratings.perl.org/d/Test-Chimps>
 
 =item * RT: CPAN's request tracker
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Test-Smoke-Report>
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Test-Chimps>
 
 =item * Search CPAN
 
-L<http://search.cpan.org/dist/Test-Smoke-Report>
+L<http://search.cpan.org/dist/Test-Chimps>
 
 =back
 
 =head1 ACKNOWLEDGEMENTS
 
 The code in this distribution is based on smokeserv-client.pl and
-smokeserv-server.pl from the PUGS distribution.
+smokeserv-server.pl from the Pugs distribution.
 
 =head1 COPYRIGHT & LICENSE
 

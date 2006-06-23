@@ -3,8 +3,16 @@ MANIFEST
 META.yml # Will be created by "make dist"
 Makefile.PL
 README
-lib/Test/Smoke/Report.pm
-t/00-load.t
+lib/Test/Chimps/Report.pm
+lib/Test/Chimps/Client.pm
+lib/Test/Chimps/Server.pm
+t
+t/bogus-tests
+t/bogus-tests/00-basic.t
+t/05-client-basic.t
 t/boilerplate.t
-t/pod-coverage.t
 t/pod.t
+t/00-dependencies.t
+t/01-report-basic.t
+t/pod-coverage.t
+t/10-server-base.t
