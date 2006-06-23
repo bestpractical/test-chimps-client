@@ -1,16 +1,23 @@
-use strict;
-use warnings;
-use ExtUtils::MakeMaker;
+use inc::Module::Install;
 
-WriteMakefile(
-    NAME                => 'Test::Smoke::Report',
-    AUTHOR              => 'Zev Benjamin <zev@cpan.org>',
-    VERSION_FROM        => 'lib/Test/Smoke/Report.pm',
-    ABSTRACT_FROM       => 'lib/Test/Smoke/Report.pm',
-    PL_FILES            => {},
-    PREREQ_PM => {
-        'Test::More' => 0,
-    },
-    dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
-    clean               => { FILES => 'Test-Smoke-Report-*' },
-);
+# Define metadata
+name            'Test-Smoke-Report';
+all_from        'lib/Test/Smoke/Report.pm';
+
+# Specific dependencies
+requires('Algorithm::TokenBucket');
+requires('HTML::Template');
+requires('LWP::UserAgent');
+requires('Module::CoreList');
+requires('Params::Validate');
+requires('Test::TAP::HTMLMatrix');
+requires('Test::TAP::Model::Visual');
+requires('Time::Piece');
+requires('Time::Seconds');
+requires('YAML::Syck');
+
+
+no_index        'directory'         => 'demos';
+
+auto_install;
+WriteAll;

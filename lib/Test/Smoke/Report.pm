@@ -30,11 +30,23 @@ be used to generate the report.
 
     chdir "some/module/directory";
 
-    my $model = Test::TAP::Model::Visual->new_with_tests(glob("t/*.t"));# t/*/t/*.t"));
+    my $model = Test::TAP::Model::Visual->new_with_tests(glob("t/*.t"));
 
     my $report = Test::Smoke::Report->new(model => $model);
 
     ...
+
+=head1 METHODS
+
+=head2 new ARGS
+
+Creates a new Report.  ARGS is a hash whose valid keys are C<model>
+and C<report_text>.  C<model> is mandatory and must be an instance
+of C<Test::Tap::Model>.  C<report_text> is an optional free-form
+report.  If not supplied, it is filled in using
+C<Test::TAP::HTMLMatrix>.  Note that if you are using this class in
+conjunction with C<Test::Smoke::Report::Server>, C<report_text>
+should probably be HTML.
 
 =cut
 
@@ -63,10 +75,22 @@ sub _init {
   }
 }
 
+=head2 model_structure
+
+Accessor for the passed-in model's structure.
+
+=cut
+
 sub model_structure {
   my $self = shift;
   return $self->{model_structure};
 }
+
+=head2 report_text
+
+Accessor for the report text.
+
+=cut
 
 sub report_text {
   my $self = shift;
@@ -115,6 +139,9 @@ L<http://search.cpan.org/dist/Test-Smoke-Report>
 
 =head1 ACKNOWLEDGEMENTS
 
+The code in this distribution is based on smokeserv-client.pl and
+smokeserv-server.pl from the PUGS distribution.
+
 =head1 COPYRIGHT & LICENSE
 
 Copyright 2006 Zev Benjamin, all rights reserved.
@@ -124,4 +151,4 @@ under the same terms as Perl itself.
 
 =cut
 
-1; # End of Test::Smoke::Report
+1;
