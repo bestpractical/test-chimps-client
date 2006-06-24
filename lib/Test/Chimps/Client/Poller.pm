@@ -73,7 +73,7 @@ file.
 use base qw/Class::Accessor/;
 __PACKAGE__->mk_ro_accessors(qw/server config_file simulate/);
 __PACKAGE__->mk_accessors(
-  qw/_added_to_inc _added_to_env _checkout_paths _config/);
+  qw/_added_to_inc _env_stack _checkout_paths _config/);
 
 # add a signal handler so destructor gets run
 $SIG{INT} = sub {print "caught sigint.  cleaning up...\n"; exit(1)};
@@ -98,7 +98,7 @@ sub _init {
     $self->{$key} = $args{$key};
   }
   $self->_added_to_inc([]);
-  $self->_added_to_env([]);
+  $self->_env_stack([]);
   $self->_checkout_paths([]);
   
   $self->_config(LoadFile($self->config_file));
@@ -154,12 +154,8 @@ sub poll {
         my $model = Test::TAP::Model::Visual->new_with_tests(glob("t/*.t t/*/t/*.t"));
         my $duration = time - $start_time;
 
-        foreach my $var (@{$self->_added_to_env}) {
-          print "unsetting environment variable $var\n";
-          delete $ENV{$var};
-        }
-        $self->_added_to_env([]);
-
+        $self->_unroll_env_stack;
+        
         foreach my $libdir (@{$self->_added_to_inc}) {
           print "removing $libdir from \@INC\n";
           shift @INC;
@@ -215,13 +211,7 @@ sub _checkout_project {
 
   system("svn", "co", "-r", $revision, $project->{svn_uri}, $tmpdir);
 
-  if (defined $project->{env}) {
-    foreach my $var (keys %{$project->{env}}) {
-      unshift @{$self->_added_to_env}, $var;
-      print "setting environment variable $var to $project->{env}->{$var}\n";
-      $ENV{$var} = $project->{env}->{$var};
-    }
-  }
+  $self->_push_onto_env_stack($project->{env});
 
   my $projectdir = File::Spec->catdir($tmpdir, $project->{root_dir});
 
@@ -268,6 +258,44 @@ sub _revisions_match {
   my $last_changed_revision = $1;
 
   return $latest_revision == $last_changed_revision;
+}
+
+sub _push_onto_env_stack {
+  my $self = shift;
+  my $vars = shift;
+
+  my $frame = {};
+  foreach my $var (keys %$vars) {
+    if (exists $ENV{$var}) {
+      $frame->{$var} = $ENV{$var};
+    } else {
+      $frame->{$var} = undef;
+    }
+    my $value = $vars->{$var};
+    # old value substitution
+    $value =~ s/\$$var/$ENV{$var}/g;
+
+    print "setting environment variable $var to $value\n";
+    $ENV{$var} = $value;
+  }
+  push @{$self->_env_stack}, $frame;
+}
+
+sub _unroll_env_stack {
+  my $self = shift;
+
+  while (scalar @{$self->_env_stack}) {
+    my $frame = pop @{$self->_env_stack};
+    foreach my $var (keys %$frame) {
+      if (defined $frame->{$var}) {
+        print "reverting environment variable $var to $frame->{$var}\n";
+        $ENV{$var} = $frame->{$var};
+      } else {
+        print "unsetting environment variable $var\n";
+        delete $ENV{$var};
+      }
+    }
+  }
 }
 
 =head1 ACCESSORS
@@ -339,7 +367,10 @@ The subversion URI of the project.
 =item * env
 
 A hash of environment variable names and values that are set before
-configuration, and unset after the tests have been run.
+configuration, and reverted to their previous values after the
+tests have been run.  In addition, if environment variable FOO's
+new value contains the string "$FOO", then the old value of FOO
+will be substituted in when setting the environment variable.
 
 =item * dependencies
 
