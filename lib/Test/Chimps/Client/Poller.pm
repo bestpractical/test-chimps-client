@@ -180,7 +180,7 @@ sub poll {
                                                  duration => $duration});
 
         my $client = Test::Chimps::Client->new(reports => [$report],
-                                               server => 'http://galvatron.mit.edu/cgi-bin/report_server.pl');
+                                               server => $self->server);
 
         my ($status, $msg);
         if ($self->simulate) {
@@ -191,7 +191,7 @@ sub poll {
         
         if ($status) {
           print "Sumbitted smoke report for $project revision $revision\n";
-          DumpFile("/home/zev/bps/poll-config.yml", $config);
+          DumpFile($self->config_file, $config);
         } else {
           print "Error: the server responded: $msg\n";
         }
