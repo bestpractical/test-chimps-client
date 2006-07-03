@@ -236,7 +236,7 @@ sub _checkout_project {
   chdir($projectdir);
 
   my $old_perl5lib = $ENV{PERL5LIB};
-  $ENV{PERL5LIB} = join($Config{path_sep}, $self->_filtered_INC) .
+  $ENV{PERL5LIB} = join($Config{path_sep}, @{$self->_added_to_inc}) .
     ':' . $ENV{PERL5LIB};
   if (defined $project->{configure_cmd}) {
     system($project->{configure_cmd});
