@@ -149,10 +149,19 @@ sub poll {
 
         $self->_checkout_project($config->{$project}, $revision);
 
+        local $SIG{ALRM} = sub { die "10 minute timeout exceeded" };
+        alarm 600;
         print "running tests for $project\n";
         my $start_time = time;
-        my $model = Test::TAP::Model::Visual->new_with_tests(glob("t/*.t t/*/t/*.t"));
+        my $model;
+        eval {
+          $model = Test::TAP::Model::Visual->new_with_tests(glob("t/*.t t/*/t/*.t"));
+        };
         my $duration = time - $start_time;
+
+        if ($@) {
+          print "Tests aborted: $@\n";
+        }
 
         $self->_unroll_env_stack;
         
