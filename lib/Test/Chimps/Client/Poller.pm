@@ -235,10 +235,14 @@ sub _checkout_project {
   
   chdir($projectdir);
 
+  my $old_perl5lib = $ENV{PERL5LIB};
+  $ENV{PERL5LIB} = join($Config{path_sep}, $self->_filtered_INC) .
+    ':' . $ENV{PERL5LIB};
   if (defined $project->{configure_cmd}) {
     system($project->{configure_cmd});
   }
-
+  $ENV{PERL5LIB} = $old_perl5lib;
+  
   for my $libloc (qw{blib/lib}) {
     my $libdir = File::Spec->catdir($tmpdir,
                                     $project->{root_dir},
