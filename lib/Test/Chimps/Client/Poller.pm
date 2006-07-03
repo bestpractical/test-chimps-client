@@ -171,13 +171,15 @@ sub poll {
     
         my $report = Test::Chimps::Report->new(model => $model,
                                                report_variables =>
-                                               { category => $project,
-                                                 subcategory => 'repository snapshot / ' . $Config{osname},
-                                                 project => scalar fileparse($config->{$project}->{svn_uri}),
+                                               { project => $project,
                                                  revision => $revision,
                                                  author => $author,
                                                  timestamp => scalar gmtime,
-                                                 duration => $duration});
+                                                 duration => $duration,
+                                                 osname => $Config{osname},
+                                                 osver => $Config{osver},
+                                                 archname => $Config{archname}
+                                               });
 
         my $client = Test::Chimps::Client->new(reports => [$report],
                                                server => $self->server);

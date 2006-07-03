@@ -83,16 +83,18 @@ sub new {
 
 sub _init {
   my $self = shift;
-  validate_with(params => \@_,
-                spec =>
-                { model =>
-                  {
-                   isa => 'Test::TAP::Model'},
-                  report_text => 0,
-                  report_variables =>
-                  { optional => 1,
-                    type => HASHREF } },
-                called => 'The Test::Chimps::Report constructor');
+  validate_with(
+    params => \@_,
+    called => 'The Test::Chimps::Report constructor',
+    spec   => {
+      model            => { isa => 'Test::TAP::Model' },
+      report_text      => 0,
+      report_variables => {
+        optional => 1,
+        type     => HASHREF
+      }
+    }
+  );
 
   my %args = @_;
 

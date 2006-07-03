@@ -88,13 +88,15 @@ sub new {
 
 sub _init {
   my $self = shift;
-  validate_with(params => \@_,
-                spec => 
-                { reports =>
-                  { type => ARRAYREF },
-                  server => 1,
-                  compress => 0},
-                called => 'The Test::Chimps::Client constructor');
+  validate_with(
+    params => \@_,
+    called => 'The Test::Chimps::Client constructor',
+    spec   => {
+      reports  => { type => ARRAYREF },
+      server   => 1,
+      compress => 0
+    }
+  );
   
   my %args = @_;
   $self->{reports} = $args{reports};
