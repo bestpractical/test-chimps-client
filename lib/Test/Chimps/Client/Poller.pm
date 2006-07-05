@@ -150,7 +150,7 @@ sub poll {
         $self->_checkout_project($config->{$project}, $revision);
 
         my $model;
-        my $durataion;
+        my $duration;
         {
           local $SIG{ALRM} = sub { die "10 minute timeout exceeded" };
           alarm 600;
