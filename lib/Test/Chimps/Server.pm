@@ -70,6 +70,16 @@ to 'bucket.dat'.
 Burst upload rate allowed (see L<Algorithm::Bucket>).  Defaults to
 5.
 
+=item * database_dir
+
+Directory under bsae_dir where the SQLite database will be stored.
+Defaults to 'chimpsdb'.
+
+=item * database_file
+
+File under database_dir to use as the SQLite database.  Defaults to
+'database'.
+
 =item * list_template
 
 Template filename under base_dir/template_dir to use for listing
@@ -95,11 +105,6 @@ MiB.
 
 Maximum number of smokes allowed per category.  Defaults to 5.
 
-=item * report_dir
-
-Directory under base_dir where smoke reports will be stored.
-Defaults to 'reports'.
-
 =item * template_dir
 
 Directory under base_dir where html templates will be stored.
@@ -119,7 +124,7 @@ use base qw/Class::Accessor/;
 
 __PACKAGE__->mk_ro_accessors(
   qw/base_dir bucket_file max_rate max_size
-    max_reports_per_subcategory report_dir
+    max_reports_per_subcategory database_dir database_file
     template_dir list_template lister
     variables_validation_spec handle/
 );
@@ -153,6 +158,16 @@ sub _init {
         callbacks => {
           "greater than or equal to 0" => sub { $_[0] >= 0 }
         }
+      },
+      database_dir => {
+        type     => SCALAR,
+        optional => 1,
+        default  => 'chimpsdb'
+      },
+      database_file => {
+        type     => SCALAR,
+        optional => 1,
+        default  => 'database'
       },
       variables_validation_spec => {
         type     => HASHREF,
@@ -216,7 +231,9 @@ sub _init {
     }
   }
 
-  my $dbname = File::Spec->catfile($self->base_dir, 'database');
+  my $dbname = File::Spec->catfile($self->base_dir,
+                                   $self->database_dir,
+                                   $self->database_file);
   $self->{handle} = Jifty::DBI::Handle->new();
 
   # create the table if the db doesn't exist.  ripped out of
