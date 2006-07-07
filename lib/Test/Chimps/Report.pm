@@ -3,123 +3,66 @@ package Test::Chimps::Report;
 use warnings;
 use strict;
 
-use Carp;
-use Params::Validate qw/:all/;
-use Test::TAP::HTMLMatrix;
-use YAML::Syck;
-
 =head1 NAME
 
 Test::Chimps::Report - Encapsulate a smoke test report
 
-=head1 VERSION
-
-Version 0.01
-
-=cut
-
-our $VERSION = '0.01';
-
 =head1 SYNOPSIS
 
-This module encapsulates a L<Test::TAP::Model>'s structure and a
-freeform report text.  If not provided, Test::TAP::HTMLMatrix will
-be used to generate the report.
-
-    use Test::Chimps::Report;
-    use Test::TAP::Model::Visual;
-
-    chdir "some/module/directory";
-
-    my $model = Test::TAP::Model::Visual->new_with_tests(glob("t/*.t"));
-
-    my $report = Test::Chimps::Report->new(model => $model);
-
-    ...
+FIXME
 
 =head1 METHODS
 
 =head2 new ARGS
 
-Creates a new Report.  ARGS is a hash whose valid keys are:
+Creates a new Report.  ARGS is a hash whose only valid key is
+handle.  Its value must be a Jifty::DBI::Handle.
+
+=head1 COLUMNS
+
+C<Test::Chimps::Report>s have the following columns (and consequently accessors):
 
 =over 4
 
-=item * model
+=item * report_html
 
-Mandatory and must be an instance of C<Test::Tap::Model>.
+=item * model_structure
 
-=item * report_text
+=item * total_ok
 
-A free-form report.  If not supplied, it is filled in using
-C<Test::TAP::HTMLMatrix>, and C<extra_data> will be passed as the
-C<extra> argument to its constructor.  Note that if you are using
-this class in conjunction with C<Test::Chimps::Server>,
-C<report_text> should probably be HTML.
+=item * total_failed
 
-=item * report_variables
+=item * total_todo
 
-Report variables to be transmitted with the report.  The decision
-of which variables should be submitted is made by the server.
+=item * total_skipped
+
+=item * total_unexpectedly_succeeded
 
 =back
 
 =cut
 
-use base qw/Class::Accessor/;
+use base qw/Jifty::DBI::Record/;
 
-__PACKAGE__->mk_ro_accessors(
-  qw/model_structure
-    report_text report_variables/
-);
+package Test::Chimps::Report::Schema;
 
+use Jifty::DBI::Schema;
 
-sub new {
-  my $class = shift;
-  my $obj = bless {}, $class;
-  $obj->_init(@_);
-  return $obj;
-}
-
-sub _init {
-  my $self = shift;
-  validate_with(
-    params => \@_,
-    called => 'The Test::Chimps::Report constructor',
-    spec   => {
-      model            => { isa => 'Test::TAP::Model' },
-      report_text      => 0,
-      report_variables => {
-        optional => 1,
-        type     => HASHREF
-      }
-    }
-  );
-
-  my %args = @_;
-
-  $self->{model_structure} = $args{model}->structure;
-  if (defined $args{report_text}) {
-    $self->{report_text} = $args{report_text};
-  } else {
-    my $v;
-    if (defined $args{report_variables}) {
-      $v = Test::TAP::HTMLMatrix->new($args{model},
-                                      Dump($args{report_variables}));
-      $self->{report_variables} = $args{report_variables};
-    } else {
-      $v = Test::TAP::HTMLMatrix->new($args{model});
-      $self->{report_variables} = '';
-    }
-    $v->has_inline_css(1);
-    $self->{report_text} = $v->detail_html;
-  }
-}
-
-=head1 ACCESSORS
-
-There are read-only accessors for model_structure, report_text, and
-report_variables.
+column report_html                  => type is 'text';
+column model_structure              => type is 'text',
+  filters are 'Jifty::DBI::Filter::Storable', 'Jifty::DBI::Filter::base64';
+column timestamp                    => type is 'date',
+  filters are 'Jifty::DBI::Filter::DateTime';
+column total_ok                     => type is 'integer';
+column total_passed                 => type is 'integer';
+column total_nok                    => type is 'integer';
+column total_failed                 => type is 'integer';
+column total_percentage             => type is 'integer';
+column total_ratio                  => type is 'integer';
+column total_seen                   => type is 'integer';
+column total_skipped                => type is 'integer';
+column total_todo                   => type is 'integer';
+column total_unexpectedly_succeeded => type is 'integer';
 
 =head1 AUTHOR
 

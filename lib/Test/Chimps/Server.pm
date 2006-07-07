@@ -3,6 +3,7 @@ package Test::Chimps::Server;
 use warnings;
 use strict;
 
+use Test::Chimps::ReportCollection;
 use Test::Chimps::Report;
 use Test::Chimps::Server::Lister;
 
@@ -10,14 +11,19 @@ use Algorithm::TokenBucket;
 use CGI::Carp   qw<fatalsToBrowser>;
 use CGI;
 use Digest::MD5 qw<md5_hex>;
+use Fcntl       qw<:DEFAULT :flock>;
 use File::Basename;
 use File::Spec;
-use Fcntl       qw<:DEFAULT :flock>;
+use Jifty::DBI::Handle;
+use Jifty::DBI::SchemaGenerator;
 use Params::Validate qw<:all>;
-use Storable    qw<store_fd fd_retrieve freeze>;
+use Storable    qw<store_fd fd_retrieve nfreeze thaw>;
+use Test::TAP::HTMLMatrix;
+use Test::TAP::Model::Visual;
 use YAML::Syck;
+use DateTime;
 
-use constant PROTO_VERSION => 0.1;
+use constant PROTO_VERSION => 0.2;
 
 =head1 NAME
 
@@ -115,7 +121,7 @@ __PACKAGE__->mk_ro_accessors(
   qw/base_dir bucket_file max_rate max_size
     max_reports_per_subcategory report_dir
     template_dir list_template lister
-    variables_validation_spec/
+    variables_validation_spec handle/
 );
 
 sub new {
@@ -202,6 +208,33 @@ sub _init {
   foreach my $key (keys %args) {
     $self->{$key} = $args{$key};
   }
+
+  if (defined $self->variables_validation_spec) {
+    foreach my $var (keys %{$self->variables_validation_spec}) {
+      package Test::Chimps::Report::Schema;
+      column($var, type(is('text')));
+    }
+  }
+
+  my $dbname = File::Spec->catfile($self->base_dir, 'database');
+  $self->{handle} = Jifty::DBI::Handle->new();
+
+  # create the table if the db doesn't exist.  ripped out of
+  # Jifty::Script::Schema because this stuff should be in
+  # Jifty::DBI, but isn't
+  if (! -e $dbname) {
+    my $sg = Jifty::DBI::SchemaGenerator->new($self->handle);
+    $sg->add_model(Test::Chimps::Report->new(handle => $self->handle));
+  
+    $self->handle->connect(driver => 'SQLite',
+                           database => $dbname);
+    # for non SQLite
+#    $self->handle->simple_query('CREATE DATABASE database');
+    $self->handle->simple_query($_) for $sg->create_table_sql_statements;
+  } else {
+    $self->handle->connect(driver => 'SQLite',
+                           database => $dbname);
+  }
 }
 
 =head2 handle_request
@@ -280,8 +313,8 @@ sub _validate_params {
     exit;
   }
 
-  if(! $cgi->param("reports")) {
-    print "No reports given!";
+  if(! $cgi->param("model_structure")) {
+    print "No model structure given!";
     exit;
   }
 
@@ -292,21 +325,17 @@ sub _variables_validation_spec {
   my $self = shift;
   my $cgi = shift;
   
-  my @reports = map { Load($_) } $cgi->param("reports");
-  
   if (defined $self->{variables_validation_spec}) {
-    foreach my $report (@reports) {
-      eval {
-        validate(@{[%{$report->{report_variables}}]}, $self->{variables_validation_spec});
-      };
-      if (defined $@ && $@) {
-        # XXX: doesn't dump subroutines because we're using YAML::Syck
-        print "This server accepts specific report variables.  It's validation ",
-          "string looks like this:\n", Dump($self->{variables_validation_spec}),
-          "\nYour extra data looks like this:\n", Dump($report->{report_variables});
-        exit;
-      }
-
+    my $report_variables = thaw($cgi->param('report_variables'));
+    eval {
+      validate(@{[%$report_variables]}, $self->{variables_validation_spec});
+    };
+    if (defined $@ && $@) {
+      # XXX: doesn't dump subroutines because we're using YAML::Syck
+      print "This server accepts specific report variables.  It's validation ",
+        "string looks like this:\n", Dump($self->{variables_validation_spec}),
+          "\nYour report variables look like this:\n", $cgi->param('report_variables');
+      exit;
     }
   }
 }
@@ -315,26 +344,44 @@ sub _add_report {
   my $self = shift;
   my $cgi = shift;
 
-  my @reports = $cgi->param("reports");
+  my $params = {};
 
-  foreach my $report (@reports) {
-    my $id = md5_hex $report;
-
-    my $report_file = File::Spec->catfile($self->{base_dir},
-                                          $self->{report_dir},
-                                          $id . ".yml");
-    if (-e $report_file) {
-      print  "One of the submitted reports was already submitted!";
-      exit;
-    }
-
-    open my $fh, ">", $report_file or
-      croak "Couldn't open \"$report_file\" for writing: $!\n";
-    print $fh $report or
-      croak "Couldn't write to \"$report_file\": $!\n";
-    close $fh or
-      croak "Couldn't close \"$report_file\": $!\n";
+  $params->{timestamp} = DateTime->from_epoch(epoch => time);
+  
+  my $report_variables = thaw($cgi->param('report_variables'));
+  foreach my $var (keys %{$report_variables}) {
+    $params->{$var} = $report_variables->{$var};
   }
+  
+  my $model = Test::TAP::Model::Visual->new_with_struct(thaw($cgi->param('model_structure')));
+
+  foreach my $var (
+    qw/total_ok
+    total_passed
+    total_nok
+    total_failed
+    total_percentage
+    total_ratio
+    total_seen
+    total_skipped
+    total_todo
+    total_unexpectedly_succeeded/
+    )
+  {
+
+    $params->{$var} = $model->$var;
+  }
+
+  $params->{model_structure} = thaw($cgi->param('model_structure'));
+  
+  my $matrix = Test::TAP::HTMLMatrix->new($model,
+                                          Dump(thaw($cgi->param('report_variables'))));
+  $matrix->has_inline_css(1);
+  $params->{report_html} = $matrix->detail_html;
+
+  my $report = Test::Chimps::Report->new(handle => $self->handle);
+
+  $report->create(%$params) or croak "Couldn't add report to database: $!\n";
 }
 
 sub _process_detail {
@@ -345,16 +392,10 @@ sub _process_detail {
   
   my $id = $cgi->param("id");
 
-  unless ($id =~ m/^[a-f0-9]+$/i) {
-    print "Invalid id: $id";
-    exit;
-  }
-
-  my $report = LoadFile(File::Spec->catfile($self->{base_dir},
-                                            $self->{report_dir},
-                                            $id . ".yml"));
-
-  print $report->report_text;
+  my $report = Test::Chimps::Report->new(handle => $self->handle);
+  $report->load($id);
+  
+  print $report->report_html;
 }
 
 sub _process_listing {
@@ -363,17 +404,11 @@ sub _process_listing {
 
   print $cgi->header();
 
-  my @files = glob File::Spec->catfile($self->{base_dir},
-                                       $self->{report_dir},
-                                       "*.yml");
-
-  my @reports = map { LoadFile($_) } @files;
-
-  # XXX FIXME we shouldn't just be adding this stuff here
-  for (my $i = 0; $i < scalar @reports ; $i++) {
-    my ($filename, $directories, $suffix) = fileparse($files[$i], '.yml');
-    $reports[$i]->{url} = $cgi->url . "?id=$filename";
-    $reports[$i]->{id} = $filename;
+  my $report_coll = Test::Chimps::ReportCollection->new(handle => $self->handle);
+  $report_coll->unlimit;
+  my @reports;
+  while (my $report = $report_coll->next) {
+    push @reports, $report;
   }
 
   my $lister;
@@ -388,7 +423,8 @@ sub _process_listing {
   
   $lister->output_list(File::Spec->catdir($self->{base_dir},
                                           $self->{template_dir}),
-                       \@reports);
+                       \@reports,
+                       $cgi);
                                                    
 }
 

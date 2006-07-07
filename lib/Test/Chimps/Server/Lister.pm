@@ -7,7 +7,6 @@ use Params::Validate qw<:all>;
 use Test::Chimps::Report;
 use HTML::Mason;
 use DateTime;
-use Date::Parse;
 
 =head1 NAME
 
@@ -88,7 +87,7 @@ sub _init {
 }
 
 sub output_list {
-  my ($self, $template_dir, $reports) = @_;
+  my ($self, $template_dir, $reports, $cgi) = @_;
 
   my $interp = HTML::Mason::Interp->new(comp_root => $template_dir);
 
@@ -96,7 +95,8 @@ sub output_list {
 
   $interp->exec(File::Spec->catfile(File::Spec->rootdir,
                                     $self->list_template),
-                categories => $categories);
+                categories => $categories,
+                cgi => $cgi);
 }
 
 sub _build_heirarchy {
@@ -117,7 +117,7 @@ sub _build_heirarchy {
 sub _compute_category {
   my $self = shift;
   my $report = shift;
-  return $report->report_variables->{project};
+  return $report->project;
 }
 
 sub _compute_subcategory {
@@ -139,15 +139,13 @@ sub _sort_reports {
 }
 
 sub _by_revision_then_date {
-  my $res = $b->report_variables->{revision} <=> $a->report_variables->{revision};
+  my $res = $b->revision <=> $a->revision;
 
   if ($res != 0) {
     return $res;
   }
   
-  my ($adate, $bdate) = (DateTime->from_epoch(epoch => str2time($a->report_variables->{timestamp})),
-                         DateTime->from_epoch(epoch => str2time($b->report_variables->{timestamp})));
-  return DateTime->compare($bdate, $adate);
+  return DateTime->compare($b->timestamp, $a->timestamp);
 }
 
 sub _prune_reports {

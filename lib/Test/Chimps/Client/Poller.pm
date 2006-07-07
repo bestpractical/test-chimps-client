@@ -38,7 +38,7 @@ them, and submit the report to a server.
     my $poller = Test::Chimps::Client::Poll->new(
       server      => 'http://www.example.com/cgi-bin/smoke-server.pl',
       config_file => '/path/to/configfile.yml'
-      )
+
 
     $poller->poll();
 
@@ -129,12 +129,10 @@ sub poll {
       next if $config->{$project}->{dependency_only};
     
       my $info_out = `svn info $config->{$project}->{svn_uri}`;
-      $info_out =~ m/Revision: (\d+)/;
+      $info_out =~ m/^Revision: (\d+)/m;
       my $latest_revision = $1;
-      $info_out =~ m/Last Changed Revision: (\d+)/;
+      $info_out =~ m/^Last Changed Rev: (\d+)/m;
       my $last_changed_revision = $1;
-      $info_out =~ m/Last Changed Author: (\w+)/;
-      my $author = $1;
 
       my $old_revision = $config->{$project}->{revision};
 
@@ -143,29 +141,32 @@ sub poll {
       foreach my $revision (($old_revision + 1) .. $latest_revision) {
         # only actually do the check out if the revision and last changed revision match for
         # a particular revision
-        next unless _revisions_match($config->{$project}->{svn_uri}, $revision);
-      
+        next unless _change_on_revision($config->{$project}->{svn_uri}, $revision);
+
+        $info_out = `svn info -r $revision $config->{$project}->{svn_uri}`;
+        $info_out =~ m/^Last Changed Author: (\w+)/m;
+        my $committer = $1;
+        
         $config->{$project}->{revision} = $revision;
 
         $self->_checkout_project($config->{$project}, $revision);
 
         my $model;
-        my $duration;
         {
           local $SIG{ALRM} = sub { die "10 minute timeout exceeded" };
           alarm 600;
           print "running tests for $project\n";
-          my $start_time = time;
           eval {
             $model = Test::TAP::Model::Visual->new_with_tests(glob("t/*.t t/*/t/*.t"));
           };
-          $duration = time - $start_time;
           alarm 0; # cancel alarm
         }
         
         if ($@) {
           print "Tests aborted: $@\n";
         }
+        
+        my $duration = $model->structure->{end_time} - $model->structure->{start_time};
 
         $self->_unroll_env_stack;
         
@@ -181,20 +182,17 @@ sub poll {
           _remove_tmpdir($tmpdir);
         }
         $self->_checkout_paths([]);
-    
-        my $report = Test::Chimps::Report->new(model => $model,
+
+        my $client = Test::Chimps::Client->new(model => $model,
                                                report_variables =>
                                                { project => $project,
                                                  revision => $revision,
-                                                 author => $author,
-                                                 timestamp => scalar gmtime,
+                                                 committer => $committer,
                                                  duration => $duration,
                                                  osname => $Config{osname},
-                                                 osver => $Config{osver},
+                                                 osvers => $Config{osvers},
                                                  archname => $Config{archname}
-                                               });
-
-        my $client = Test::Chimps::Client->new(reports => [$report],
+                                               },
                                                server => $self->server);
 
         my ($status, $msg);
@@ -266,14 +264,14 @@ sub _remove_tmpdir {
   rmtree($tmpdir, 0, 0);
 }
 
-sub _revisions_match {
+sub _change_on_revision {
   my $uri = shift;
   my $revision = shift;
 
   my $info_out = `svn info -r $revision $uri`;
-  $info_out =~ m/Revision: (\d+)/;
+  $info_out =~ m/^Revision: (\d+)/m;
   my $latest_revision = $1;
-  $info_out =~ m/Last Changed Revision: (\d+)/;
+  $info_out =~ m/^Last Changed Rev: (\d+)/m;
   my $last_changed_revision = $1;
 
   return $latest_revision == $last_changed_revision;

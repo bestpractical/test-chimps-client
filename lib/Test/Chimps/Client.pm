@@ -7,13 +7,13 @@ use Carp;
 use Params::Validate qw/:all/;
 use Test::Chimps;
 use LWP::UserAgent;
-use YAML::Syck;
+use Storable qw/nfreeze/;
 
-use constant PROTO_VERSION => 0.1;
+use constant PROTO_VERSION => 0.2;
 
 =head1 NAME
 
-Test::Chimps::Client - Send a Test::Chimps::Report to a server
+Test::Chimps::Client - Send smoke test results to a server
 
 =head1 VERSION
 
@@ -25,10 +25,9 @@ our $VERSION = '0.01';
 
 =head1 SYNOPSIS
 
-This module simplifies the process of sending C<Test::Chimps::Report>s to a
-smoke server.
+This module simplifies the process of sending smoke test results
+(in the form of C<Test::TAP::Model>s) to a smoke server.
 
-    use Test::Chimps::Report;
     use Test::Chimps::Client;
     use Test::TAP::Model::Visual;
 
@@ -36,10 +35,10 @@ smoke server.
 
     my $model = Test::TAP::Model::Visual->new_with_tests(glob("t/*.t"));
 
-    my $report = Test::Chimps::Report->new(model => $model);
-
-    my $client = Test::Chimps::Client->new(reports => [$report],
-                                           server => 'http://www.example.com/cgi-bin/smoke-server.pl');
+    my $client = Test::Chimps::Client->new(
+      server => 'http://www.example.com/cgi-bin/smoke-server.pl',
+      model  => $model
+    );
     
     my ($status, $msg) = $client->send;
     
@@ -61,15 +60,14 @@ Creates a new Client object.  ARGS is a hash whose valid keys are:
 
 Optional.  Does not currently work
 
-=item * reports
+=item * model
 
-Mandatory.  The value must be an array reference which contains
-C<Test::Chimps>s.  These are the reports that will be
-submitted to the server.
+Mandatory.  The value must be a C<Test::TAP::Model>.  These are the
+test results that will be submitted to the server.
 
 =item * server
 
-Mandatory.  The URI of the server script to upload the reports to.
+Mandatory.  The URI of the server script to upload the model to.
 
 =back
 
@@ -77,7 +75,7 @@ Mandatory.  The URI of the server script to upload the reports to.
 
 use base qw/Class::Accessor/;
 
-__PACKAGE__->mk_ro_accessors(qw/reports server compress/);
+__PACKAGE__->mk_ro_accessors(qw/model server compress report_variables/);
 
 sub new {
   my $class = shift;
@@ -88,29 +86,30 @@ sub new {
 
 sub _init {
   my $self = shift;
-  validate_with(
+  my %args = validate_with(
     params => \@_,
     called => 'The Test::Chimps::Client constructor',
     spec   => {
-      reports  => { type => ARRAYREF },
-      server   => 1,
-      compress => 0
+      model            => { isa => 'Test::TAP::Model' },
+      server           => 1,
+      compress         => 0,
+      report_variables => {
+        optional => 1,
+        type     => HASHREF,
+        default  => {}
+      }
     }
   );
-  
-  my %args = @_;
-  $self->{reports} = $args{reports};
-  foreach my $report (@{$self->{reports}}) {
-    croak "one the the specified reports is not a Test::Chimps::Report"
-      if ! (ref $report && $report->isa('Test::Chimps::Report'));
+
+  foreach my $key (keys %args) {
+    $self->{$key} = $args{$key};
   }
-  $self->{server} = $args{server};
-  $self->{compress} = $args{compress} || 0;
+
 }
 
 =head2 send
 
-Submit the specified reports to the server.  This function's return
+Submit the specified model to the server.  This function's return
 value is a list, the first of which indicates success or failure,
 and the second of which is an error string.
 
@@ -123,9 +122,9 @@ sub send {
   $ua->agent("Test-Chimps-Client/" . PROTO_VERSION);
   $ua->env_proxy;
 
-  my $serialized_reports = [ map { Dump($_) } @{$self->reports} ];
   my %request = (upload => 1, version => PROTO_VERSION,
-                 reports => $serialized_reports);
+                 model_structure => nfreeze($self->model->structure),
+                 report_variables => nfreeze($self->report_variables));
 
   my $resp = $ua->post($self->server => \%request);
   if($resp->is_success) {
@@ -141,7 +140,8 @@ sub send {
 
 =head1 ACCESSORS
 
-There are read-only accessors for compress, reports, and server.
+There are read-only accessors for compress, model,
+report_variables, and server.
 
 =head1 AUTHOR
 
