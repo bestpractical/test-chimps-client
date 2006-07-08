@@ -51,7 +51,7 @@ use Jifty::DBI::Schema;
 column report_html                  => type is 'text';
 column model_structure              => type is 'text',
   filters are 'Jifty::DBI::Filter::Storable', 'Jifty::DBI::Filter::base64';
-column timestamp                    => type is 'date',
+column timestamp                    => type is 'timestamp',
   filters are 'Jifty::DBI::Filter::DateTime';
 column total_ok                     => type is 'integer';
 column total_passed                 => type is 'integer';
