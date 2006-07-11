@@ -28,17 +28,32 @@ C<Test::Chimps::Report>s have the following columns (and consequently accessors)
 
 =item * model_structure
 
+=item * timestamp
+
 =item * total_ok
+
+=item * total_passed
+
+=item * total_nok
 
 =item * total_failed
 
-=item * total_todo
+=item * total_percentage
+
+=item * total_ratio
+
+=item * total_seen
 
 =item * total_skipped
 
-=item * total_unexpectedly_succeeded
+=item * total_todo
+
+=item * total_unexpectedly_succeeded 
 
 =back
+
+Additionally, columns are added dynamically based on the report
+variables specified in the server.
 
 =cut
 

@@ -57,6 +57,12 @@ __PACKAGE__->mk_ro_accessors(
 );
 
 
+=head2 new
+
+Returns a new Lister object
+
+=cut
+
 sub new {
   my $class = shift;
   my $obj = bless {}, $class;
@@ -85,6 +91,12 @@ sub _init {
     $self->{$key} = $args{$key};
   }
 }
+
+=head2 output_list
+
+Output the smoke report listing.
+
+=cut
 
 sub output_list {
   my ($self, $template_dir, $reports, $cgi) = @_;

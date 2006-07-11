@@ -29,14 +29,6 @@ use constant PROTO_VERSION => 0.2;
 
 Test::Chimps::Server - Accept smoke report uploads and display smoke reports
 
-=head1 VERSION
-
-Version 0.01
-
-=cut
-
-our $VERSION = '0.01';
-
 =head1 SYNOPSIS
 
 This module simplifies the process of running a smoke server.  It

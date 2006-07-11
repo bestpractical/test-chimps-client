@@ -4,27 +4,39 @@ use warnings;
 use strict;
 
 use Getopt::Long;
-use Test::Chimps::Report;
 use Test::Chimps::Client;
 use Test::TAP::Model::Visual;
 
-chdir "jifty/trunk";
+my $model;
+{
+  local $SIG{ALRM} = sub { die "10 minute timeout exceeded" };
+  alarm 600;
+  print "running tests for $project\n";
+  eval {
+    $model = Test::TAP::Model::Visual->new_with_tests(glob("t/*.t t/*/t/*.t"));
+  };
+  alarm 0;                      # cancel alarm
+}
+        
+if ($@) {
+  print "Tests aborted: $@\n";
+}
 
-my $start_time = time;
-my $model = Test::TAP::Model::Visual->new_with_tests(glob("t/*.t t/*/t/*.t"));
-my $duration = time - $start_time;
+my $duration = $model->structure->{end_time} - $model->structure->{start_time};
 
-my $report = Test::Chimps::Report->new(model => $model,
-                                       report_variables =>
-                                       { category => 'Jifty',
-                                         subcategory => 'repository snapshot / Linux',
-                                         project => 'jifty',
-                                         revision => 5,
-                                         timestamp => scalar gmtime,
-                                         duration => $duration });
-
-my $client = Test::Chimps::Client->new(reports => [$report],
-                                       server => 'http://galvatron.mit.edu/cgi-bin/report_server.pl');
+my $client = Test::Chimps::Client->new(
+  model  => $model,
+  server => 'http://galvatron.mit.edu/cgi-bin/report_server.pl',
+  {
+    project   => $project,
+    revision  => $revision,
+    committer => $committer,
+    duration  => $duration,
+    osname    => $Config{osname},
+    osvers    => $Config{osvers},
+    archname  => $Config{archname}
+  }
+);
 
 my ($status, $msg) = $client->send;
 

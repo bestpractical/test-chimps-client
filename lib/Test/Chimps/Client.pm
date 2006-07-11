@@ -15,14 +15,6 @@ use constant PROTO_VERSION => 0.2;
 
 Test::Chimps::Client - Send smoke test results to a server
 
-=head1 VERSION
-
-Version 0.01
-
-=cut
-
-our $VERSION = '0.01';
-
 =head1 SYNOPSIS
 
 This module simplifies the process of sending smoke test results

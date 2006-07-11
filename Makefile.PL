@@ -10,13 +10,18 @@ requires('Class::Accessor');
 requires('Date::Parse');
 requires('DateTime');
 requires('HTML::Mason');
+requires('Jifty::DBI::Collection');
+requires('Jifty::DBI::Handle');
+requires('Jifty::DBI::Record');
+requires('Jifty::DBI::Schema');
+requires('Jifty::DBI::SchemaGenerator');
 requires('LWP::UserAgent');
-requires('Module::CoreList');
 requires('Params::Validate');
-requires('Test::Dependencies');
 requires('Test::TAP::HTMLMatrix');
 requires('Test::TAP::Model::Visual');
 requires('YAML::Syck');
+
+build_requires('Test::Dependencies');
 
 auto_install;
 WriteAll;

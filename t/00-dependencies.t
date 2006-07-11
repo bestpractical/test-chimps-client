@@ -1,4 +1,4 @@
-#!perl -T
+#!perl
 
 use Test::Dependencies exclude => [qw/Test::Chimps/];
 
