@@ -186,12 +186,12 @@ L<http://search.cpan.org/dist/Test-Chimps-Client>
 =head1 ACKNOWLEDGEMENTS
 
 Some code in this module is based on smokeserv-client.pl from the
-PUGS distribution.
+Pugs distribution.
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2006 Best Practical Solutions, all rights reserved.
-Portions copyright 2005-2006 the Pugs project, all rights reserved.
+Copyright 2006 Best Practical Solutions.
+Portions copyright 2005-2006 the Pugs project.
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
