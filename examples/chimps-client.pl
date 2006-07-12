@@ -25,7 +25,7 @@ my $duration = $model->structure->{end_time} - $model->structure->{start_time};
 
 my $client = Test::Chimps::Client->new(
   model  => $model,
-  server => 'http://galvatron.mit.edu/cgi-bin/report_server.pl',
+  server => 'http://example.com/cgi-bin/chimps-server.pl',
   {
     project   => $project,
     revision  => $revision,

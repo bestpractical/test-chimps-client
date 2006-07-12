@@ -6,7 +6,7 @@ use strict;
 use Test::Chimps::Smoker;
   
 my $poller = Test::Chimps::Smoker->new(
-  server      => 'http://galvatron.mit.edu/cgi-bin/report_server.pl',
+  server      => 'http://example.com/cgi-bin/chimps-server.pl',
   config_file => "$ENV{HOME}/poll-config.yml",
 );
 

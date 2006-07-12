@@ -185,8 +185,8 @@ L<http://search.cpan.org/dist/Test-Chimps-Client>
 
 =head1 ACKNOWLEDGEMENTS
 
-The code in this distribution is based on smokeserv-client.pl from
-the PUGS distribution.
+Some code in this module is based on smokeserv-client.pl from the
+PUGS distribution.
 
 =head1 COPYRIGHT & LICENSE
 
