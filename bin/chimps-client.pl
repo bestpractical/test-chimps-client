@@ -3,7 +3,6 @@
 use warnings;
 use strict;
 
-use Getopt::Long;
 use Test::Chimps::Client;
 use Test::TAP::Model::Visual;
 

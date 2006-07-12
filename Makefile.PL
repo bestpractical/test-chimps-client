@@ -2,22 +2,12 @@ use inc::Module::Install;
 
 # Define metadata
 name            'Test-Chimps';
-all_from        'lib/Test/Chimps.pm';
+all_from        'lib/Test/Chimps/Client.pm';
 
 # Specific dependencies
-requires('Algorithm::TokenBucket');
 requires('Class::Accessor');
-requires('Date::Parse');
-requires('DateTime');
-requires('HTML::Mason');
-requires('Jifty::DBI::Collection');
-requires('Jifty::DBI::Handle');
-requires('Jifty::DBI::Record');
-requires('Jifty::DBI::Schema');
-requires('Jifty::DBI::SchemaGenerator');
 requires('LWP::UserAgent');
 requires('Params::Validate');
-requires('Test::TAP::HTMLMatrix');
 requires('Test::TAP::Model::Visual');
 requires('YAML::Syck');
 

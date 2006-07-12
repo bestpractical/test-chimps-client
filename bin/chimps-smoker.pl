@@ -3,11 +3,11 @@
 use warnings;
 use strict;
 
-use Test::Chimps::Client::Poller;
+use Test::Chimps::Smoker;
   
-my $poller = Test::Chimps::Client::Poller->new(
+my $poller = Test::Chimps::Smoker->new(
   server      => 'http://galvatron.mit.edu/cgi-bin/report_server.pl',
   config_file => "$ENV{HOME}/poll-config.yml",
 );
 
-$poller->poll;
+$poller->smoke;

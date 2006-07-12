@@ -15,6 +15,14 @@ use constant PROTO_VERSION => 0.2;
 
 Test::Chimps::Client - Send smoke test results to a server
 
+=head1 VERSION
+
+Version 0.02
+
+=cut
+
+our $VERSION = '0.02';
+
 =head1 SYNOPSIS
 
 This module simplifies the process of sending smoke test results
@@ -143,7 +151,7 @@ Zev Benjamin, C<< <zev at cpan.org> >>
 
 Please report any bugs or feature requests to
 C<bug-test-chimps at rt.cpan.org>, or through the web interface at
-L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Test-Chimps>.
+L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Test-Chimps-Client>.
 I will be notified, and then you'll automatically be notified of progress on
 your bug as I make changes.
 
@@ -151,7 +159,7 @@ your bug as I make changes.
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Test::Chimps
+    perldoc Test::Chimps::Client
 
 You can also look for information at:
 
@@ -159,30 +167,31 @@ You can also look for information at:
 
 =item * AnnoCPAN: Annotated CPAN documentation
 
-L<http://annocpan.org/dist/Test-Chimps>
+L<http://annocpan.org/dist/Test-Chimps-Client>
 
 =item * CPAN Ratings
 
-L<http://cpanratings.perl.org/d/Test-Chimps>
+L<http://cpanratings.perl.org/d/Test-Chimps-Client>
 
 =item * RT: CPAN's request tracker
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Test-Chimps>
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Test-Chimps-Client>
 
 =item * Search CPAN
 
-L<http://search.cpan.org/dist/Test-Chimps>
+L<http://search.cpan.org/dist/Test-Chimps-Client>
 
 =back
 
 =head1 ACKNOWLEDGEMENTS
 
-The code in this distribution is based on smokeserv-client.pl and
-smokeserv-server.pl from the PUGS distribution.
+The code in this distribution is based on smokeserv-client.pl from
+the PUGS distribution.
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2006 Zev Benjamin, all rights reserved.
+Copyright 2006 Best Practical Solutions, all rights reserved.
+Portions copyright 2005-2006 the Pugs project, all rights reserved.
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

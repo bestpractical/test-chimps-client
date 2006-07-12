@@ -1,4 +1,4 @@
-package Test::Chimps::Client::Poller;
+package Test::Chimps::Smoker;
 
 use warnings;
 use strict;
@@ -9,21 +9,12 @@ use File::Path;
 use File::Temp qw/tempdir/;
 use Params::Validate qw/:all/;
 use Test::Chimps::Client;
-use Test::Chimps::Report;
 use Test::TAP::Model::Visual;
 use YAML::Syck;
 
 =head1 NAME
 
-Test::Chimps::Client - Poll a set of SVN repositories and run tests when they change
-
-=head1 VERSION
-
-Version 0.01
-
-=cut
-
-our $VERSION = '0.01';
+Test::Chimps::Smoker - Poll a set of SVN repositories and run tests when they change
 
 =head1 SYNOPSIS
 
@@ -33,9 +24,9 @@ projects and how to test them, and it will monitor the SVN
 repositories, check the projects out (and their dependencies), test
 them, and submit the report to a server.
 
-    use Test::Chimps::Client::Poll;
+    use Test::Chimps::Smoker;
 
-    my $poller = Test::Chimps::Client::Poll->new(
+    my $poller = Test::Chimps::Smoker->new(
       server      => 'http://www.example.com/cgi-bin/smoke-server.pl',
       config_file => '/path/to/configfile.yml'
 
@@ -92,7 +83,7 @@ sub _init {
                            { server => 1,
                              config_file => 1,
                              simulate => 0},
-                           called => 'The Test::Chimps::Client::Poll constructor');
+                           called => 'The Test::Chimps::Smoker constructor');
   
   foreach my $key (keys %args) {
     $self->{$key} = $args{$key};
@@ -111,9 +102,9 @@ sub DESTROY {
   }
 }
 
-=head2 poll
+=head2 smoke
 
-Calling poll will cause the C<Poll> object to continually poll
+Calling smoke will cause the C<Smoker> object to continually poll
 repositories for changes in revision numbers.  If an (actual)
 change is detected, the repository will be checked out (with
 dependencies), built, and tested, and the resulting report will be
@@ -121,7 +112,7 @@ submitted to the server.  This method does not return.
 
 =cut
 
-sub poll {
+sub smoke {
   my $self = shift;
   my $config = $self->_config;
   while (1) {
@@ -412,7 +403,7 @@ Zev Benjamin, C<< <zev at cpan.org> >>
 
 Please report any bugs or feature requests to
 C<bug-test-chimps at rt.cpan.org>, or through the web interface at
-L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Test-Chimps>.
+L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Test-Chimps-Client>.
 I will be notified, and then you'll automatically be notified of progress on
 your bug as I make changes.
 
@@ -420,7 +411,7 @@ your bug as I make changes.
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Test::Chimps
+    perldoc Test::Chimps::Smoker
 
 You can also look for information at:
 
@@ -428,30 +419,25 @@ You can also look for information at:
 
 =item * AnnoCPAN: Annotated CPAN documentation
 
-L<http://annocpan.org/dist/Test-Chimps>
+L<http://annocpan.org/dist/Test-Chimps-Client>
 
 =item * CPAN Ratings
 
-L<http://cpanratings.perl.org/d/Test-Chimps>
+L<http://cpanratings.perl.org/d/Test-Chimps-Client>
 
 =item * RT: CPAN's request tracker
 
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Test-Chimps>
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=Test-Chimps-Client>
 
 =item * Search CPAN
 
-L<http://search.cpan.org/dist/Test-Chimps>
+L<http://search.cpan.org/dist/Test-Chimps-Client>
 
 =back
 
-=head1 ACKNOWLEDGEMENTS
-
-The code in this distribution is based on smokeserv-client.pl and
-smokeserv-server.pl from the PUGS distribution.
-
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2006 Zev Benjamin, all rights reserved.
+Copyright 2006 Best Practical Solutions, all rights reserved.
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

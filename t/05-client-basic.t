@@ -8,7 +8,7 @@ BEGIN {
   use_ok( 'Test::Chimps::Client' );
 }
 
-my $m = Test::TAP::Model::Visual->new_with_tests('t/bogus-tests/00-basic.t');
+my $m = Test::TAP::Model::Visual->new_with_tests('t-data/bogus-tests/00-basic.t');
 
 my $c = Test::Chimps::Client->new(model => $m,
                                   server => 'bogus',
