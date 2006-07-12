@@ -1,6 +1,6 @@
-bin/chimps-client.pl
-bin/chimps-smoker.pl
 Changes
+examples/chimps-client.pl
+examples/chimps-smoker.pl
 inc/Module/AutoInstall.pm
 inc/Module/Install.pm
 inc/Module/Install/AutoInstall.pm

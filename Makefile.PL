@@ -1,7 +1,7 @@
 use inc::Module::Install;
 
 # Define metadata
-name            'Test-Chimps';
+name            'Test-Chimps-Client';
 all_from        'lib/Test/Chimps/Client.pm';
 
 # Specific dependencies
