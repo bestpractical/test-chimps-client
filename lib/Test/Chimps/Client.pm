@@ -5,7 +5,6 @@ use strict;
 
 use Carp;
 use Params::Validate qw/:all/;
-use Test::Chimps;
 use LWP::UserAgent;
 use Storable qw/nfreeze/;
 
