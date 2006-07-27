@@ -27,7 +27,7 @@ them, and submit the report to a server.
     use Test::Chimps::Smoker;
 
     my $poller = Test::Chimps::Smoker->new(
-      server      => 'http://www.example.com/cgi-bin/smoke-server.pl',
+      server      => 'http://www.example.com/cgi-bin/chimps-server.pl',
       config_file => '/path/to/configfile.yml'
 
 
