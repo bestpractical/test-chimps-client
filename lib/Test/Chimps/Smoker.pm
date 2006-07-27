@@ -130,8 +130,10 @@ sub _smoke_once {
 
   return 0 unless $last_changed_revision > $old_revision;
 
+  my @revisions = (($old_revision + 1) .. $latest_revision);
   my $revision;
-  foreach $revision (($old_revision + 1) .. $latest_revision) {
+  while (@revisions) {
+    $revision = shift @revisions;
     # only actually do the check out if the revision and last changed revision match for
     # a particular revision
     last if _change_on_revision($config->{$project}->{svn_uri}, $revision);
@@ -285,9 +287,9 @@ sub smoke {
     called => 'Test::Chimps::Smoker->smoke'
   );
 
-  $self->_validate_projects_opt;
   my $projects = $args{projects};
   my $iterations = $args{iterations};
+  $self->_validate_projects_opt($projects);
   
   if ($projects eq 'all') {
     $projects = [keys %$config];
@@ -298,7 +300,7 @@ sub smoke {
 }
 
 sub _validate_projects_opt {
-  my ($self, $projects) = shift;
+  my ($self, $projects) = @_;
   return if $projects eq 'all';
 
   foreach my $project (@$projects) {
