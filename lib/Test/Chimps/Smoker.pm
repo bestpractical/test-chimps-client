@@ -102,7 +102,7 @@ sub _init {
   $self->_added_to_inc([]);
   $self->_env_stack([]);
   $self->_checkout_paths([]);
-  
+
   $self->_config(LoadFile($self->config_file));
 }
 
@@ -117,9 +117,9 @@ sub _smoke_once {
   my $self = shift;
   my $project = shift;
   my $config = $self->_config;
-  
+
   return 1 if $config->{$project}->{dependency_only};
-    
+
   my $info_out = `svn info $config->{$project}->{svn_uri}`;
   $info_out =~ m/^Revision: (\d+)/m;
   my $latest_revision = $1;
@@ -142,7 +142,7 @@ sub _smoke_once {
   $info_out = `svn info -r $revision $config->{$project}->{svn_uri}`;
   $info_out =~ m/^Last Changed Author: (\w+)/m;
   my $committer = $1;
-        
+
   $config->{$project}->{revision} = $revision;
 
   $self->_checkout_project($config->{$project}, $revision);
@@ -157,15 +157,15 @@ sub _smoke_once {
     };
     alarm 0;                    # cancel alarm
   }
-        
+
   if ($@) {
     print "Tests aborted: $@\n";
   }
-        
+
   my $duration = $model->structure->{end_time} - $model->structure->{start_time};
 
   $self->_unroll_env_stack;
-        
+
   foreach my $libdir (@{$self->_added_to_inc}) {
     print "removing $libdir from \@INC\n";
     shift @INC;
@@ -179,17 +179,19 @@ sub _smoke_once {
   }
   $self->_checkout_paths([]);
 
-  my $client = Test::Chimps::Client->new(model => $model,
-                                         report_variables =>
-                                         { project => $project,
-                                           revision => $revision,
-                                           committer => $committer,
-                                           duration => $duration,
-                                           osname => $Config{osname},
-                                           osvers => $Config{osvers},
-                                           archname => $Config{archname}
-                                         },
-                                         server => $self->server);
+  my $client = Test::Chimps::Client->new(
+    model            => $model,
+    report_variables => {
+      project   => $project,
+      revision  => $revision,
+      committer => $committer,
+      duration  => $duration,
+      osname    => $Config{osname},
+      osvers    => $Config{osvers},
+      archname  => $Config{archname}
+    },
+    server => $self->server
+  );
 
   my ($status, $msg);
   if ($self->simulate) {
@@ -197,7 +199,7 @@ sub _smoke_once {
   } else {
     ($status, $msg) = $client->send;
   }
-        
+
   if ($status) {
     print "Sumbitted smoke report for $project revision $revision\n";
     DumpFile($self->config_file, $config);
@@ -290,7 +292,7 @@ sub smoke {
   my $projects = $args{projects};
   my $iterations = $args{iterations};
   $self->_validate_projects_opt($projects);
-  
+
   if ($projects eq 'all') {
     $projects = [keys %$config];
   }
@@ -307,7 +309,7 @@ sub _validate_projects_opt {
     die "no such project: '$project'"
       unless exists $self->_config->{$project};
   }
-}  
+}
 
 sub _checkout_project {
   my $self = shift;
@@ -329,7 +331,7 @@ sub _checkout_project {
       $self->_checkout_project($self->_config->{$dep}, 'HEAD');
     }
   }
-  
+
   chdir($projectdir);
 
   my $old_perl5lib = $ENV{PERL5LIB};
@@ -339,7 +341,7 @@ sub _checkout_project {
     system($project->{configure_cmd});
   }
   $ENV{PERL5LIB} = $old_perl5lib;
-  
+
   for my $libloc (qw{blib/lib}) {
     my $libdir = File::Spec->catdir($tmpdir,
                                     $project->{root_dir},
@@ -423,24 +425,24 @@ comprise the configuration options for that project.
 Perhaps an example is best.  A typical configuration file might
 look like this:
 
-    --- 
-    Some-jifty-project: 
+    ---
+    Some-jifty-project:
       configure_cmd: perl Makefile.PL --skipdeps && make
-      dependencies: 
+      dependencies:
         - Jifty
       revision: 555
       root_dir: trunk/foo
       svn_uri: svn+ssh://svn.example.com/svn/foo
-    Jifty: 
+    Jifty:
       configure_cmd: perl Makefile.PL --skipdeps && make
-      dependencies: 
+      dependencies:
         - Jifty-DBI
       revision: 1332
       root_dir: trunk
       svn_uri: svn+ssh://svn.jifty.org/svn/jifty.org/jifty
-    Jifty-DBI: 
+    Jifty-DBI:
       configure_cmd: perl Makefile.PL --skipdeps && make
-      env: 
+      env:
         JDBI_TEST_MYSQL: jiftydbitestdb
         JDBI_TEST_MYSQL_PASS: ''
         JDBI_TEST_MYSQL_USER: jiftydbitest
@@ -449,7 +451,7 @@ look like this:
       revision: 1358
       root_dir: trunk
       svn_uri: svn+ssh://svn.jifty.org/svn/jifty.org/Jifty-DBI
-    
+
 The supported project options are as follows:
 
 =over 4
@@ -499,6 +501,18 @@ present to serve as a dependency for another project.
 
 =back
 
+=head1 REPORT VARIABLES
+
+This module assumes the use of the following report variables:
+
+    project
+    revision
+    committer
+    duration
+    osname
+    osvers
+    archname
+
 =head1 AUTHOR
 
 Zev Benjamin, C<< <zev at cpan.org> >>
@@ -520,6 +534,13 @@ You can find documentation for this module with the perldoc command.
 You can also look for information at:
 
 =over 4
+
+=item * Mailing list
+
+Chimps has a mailman mailing list at
+L<chimps@bestpractical.com>.  You can subscribe via the web
+interface at
+L<http://lists.bestpractical.com/cgi-bin/mailman/listinfo/chimps>.
 
 =item * AnnoCPAN: Annotated CPAN documentation
 

@@ -16,11 +16,11 @@ Test::Chimps::Client - Send smoke test results to a server
 
 =head1 VERSION
 
-Version 0.04
+Version 0.05
 
 =cut
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 =head1 SYNOPSIS
 
@@ -63,6 +63,11 @@ Optional.  Does not currently work
 
 Mandatory.  The value must be a C<Test::TAP::Model>.  These are the
 test results that will be submitted to the server.
+
+=item * report_variables
+
+Optional.  A hashref of report variables and values to send to the
+server.
 
 =item * server
 
@@ -163,6 +168,13 @@ You can find documentation for this module with the perldoc command.
 You can also look for information at:
 
 =over 4
+
+=item * Mailing list
+
+Chimps has a mailman mailing list at
+L<chimps@bestpractical.com>.  You can subscribe via the web
+interface at
+L<http://lists.bestpractical.com/cgi-bin/mailman/listinfo/chimps>.
 
 =item * AnnoCPAN: Annotated CPAN documentation
 

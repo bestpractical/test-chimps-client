@@ -1,5 +1,9 @@
 Revision history for Test-Chimps-Client
 
+0.05    Sun Aug 13 14:43:14 EDT 2006
+        * added information about the mailing list
+        * documented chimps-smoker.pl
+
 0.04    Fri Jul 28 14:29:34 EDT 2006
         * Test::Chimps::Smoker->smoke can now take number of
           iterations and which projects to smoke as arguments
