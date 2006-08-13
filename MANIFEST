@@ -26,4 +26,3 @@ t/10-smoker-basic.t
 t/boilerplate.t
 t/pod-coverage.t
 t/pod.t
-Test-Chimps-Client-0.03.tar.gz
