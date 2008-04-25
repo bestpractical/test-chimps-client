@@ -152,8 +152,9 @@ sub _smoke_once {
     local $SIG{ALRM} = sub { die "10 minute timeout exceeded" };
     alarm 600;
     print "running tests for $project\n";
+    my $test_glob = $config->{$project}->{test_glob} || 't/*.t t/*/t/*.t';
     eval {
-      $model = Test::TAP::Model::Visual->new_with_tests(glob("t/*.t t/*/t/*.t"));
+      $model = Test::TAP::Model::Visual->new_with_tests(glob($test_glob));
     };
     alarm 0;                    # cancel alarm
   }
@@ -433,6 +434,7 @@ look like this:
       revision: 555
       root_dir: trunk/foo
       svn_uri: svn+ssh://svn.example.com/svn/foo
+      test_glob: t/*.t t/*/*.t
     Jifty:
       configure_cmd: perl Makefile.PL --skipdeps && make
       dependencies:
@@ -499,6 +501,11 @@ the project is run.
 Indicates that this project should not be tested.  It is only
 present to serve as a dependency for another project.
 
+=item * test_glob
+
+How to find all your tests, defaults to
+t/*.t t/*/t/*.t
+"
 =back
 
 =head1 REPORT VARIABLES
