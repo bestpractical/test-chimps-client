@@ -12,6 +12,8 @@ use Test::Chimps::Client;
 use Test::TAP::Model::Visual;
 use YAML::Syck;
 
+use DBI;
+
 =head1 NAME
 
 Test::Chimps::Smoker - Poll a set of SVN repositories and run tests when they change
@@ -148,16 +150,11 @@ sub _smoke_once {
   $self->_checkout_project($config->{$project}, $revision);
 
   my $model;
-  {
-    local $SIG{ALRM} = sub { die "10 minute timeout exceeded" };
-    alarm 600;
-    print "running tests for $project\n";
-    my $test_glob = $config->{$project}->{test_glob} || 't/*.t t/*/t/*.t';
-    eval {
-      $model = Test::TAP::Model::Visual->new_with_tests(glob($test_glob));
-    };
-    alarm 0;                    # cancel alarm
-  }
+  print "running tests for $project\n";
+  my $test_glob = $config->{$project}->{test_glob} || 't/*.t t/*/t/*.t';
+  eval {
+    $model = Test::TAP::Model::Visual->new_with_tests(glob($test_glob));
+  };
 
   if ($@) {
     print "Tests aborted: $@\n";
@@ -180,6 +177,8 @@ sub _smoke_once {
   }
   $self->_checkout_paths([]);
 
+  $self->_clean_dbs;
+
   my $client = Test::Chimps::Client->new(
     model            => $model,
     report_variables => {
@@ -198,6 +197,7 @@ sub _smoke_once {
   if ($self->simulate) {
     $status = 1;
   } else {
+    print "Sending smoke report for @{[$self->server]}\n";
     ($status, $msg) = $client->send;
   }
 
@@ -343,7 +343,10 @@ sub _checkout_project {
   }
   $ENV{PERL5LIB} = $old_perl5lib;
 
-  for my $libloc (qw{blib/lib}) {
+  my @libs = qw{blib/lib};
+  push @libs, @{$project->{libs}} if $project->{libs};
+
+  for my $libloc (@libs) {
     my $libdir = File::Spec->catdir($tmpdir,
                                     $project->{root_dir},
                                     $libloc);
@@ -354,6 +357,18 @@ sub _checkout_project {
 
 
   return $projectdir;
+}
+
+sub _clean_dbs {
+    my %skip = map {$_ => 1} (qw/postgres template0 template1 smoke jifty jiftydbitestdb/);
+
+    $ENV{DBI_USER} = "postgres";
+    my @dbs = grep {not $skip{$_}} 
+              map {s/.*dbname=(.*)/$1/; $_}
+              DBI->data_sources("Pg");
+
+    my $dbh = DBI->connect("dbi:Pg:dbname=template1","postgres","",{RaiseError => 1});
+    $dbh->do("DROP DATABASE $_") for @dbs;
 }
 
 sub _remove_tmpdir {
@@ -505,7 +520,13 @@ present to serve as a dependency for another project.
 
 How to find all your tests, defaults to
 t/*.t t/*/t/*.t
-"
+
+=item * libs
+
+A list of paths, relative to the project root, which should be added
+to @INC.  C<blib/lib> is automatically added, but you may need to
+include C<lib> here, for instance.
+
 =back
 
 =head1 REPORT VARIABLES
