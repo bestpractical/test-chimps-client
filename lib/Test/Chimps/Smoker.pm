@@ -9,7 +9,7 @@ use File::Path;
 use File::Temp qw/tempdir/;
 use Params::Validate qw/:all/;
 use Test::Chimps::Client;
-use Test::TAP::Model::Visual;
+use TAP::Harness::Archive;
 use YAML::Syck;
 
 use DBI;
@@ -145,22 +145,23 @@ sub _smoke_once {
   $info_out =~ m/^Last Changed Author: (\w+)/m;
   my $committer = $1;
 
-  $config->{$project}->{revision} = $revision;
-
   $self->_checkout_project($config->{$project}, $revision);
 
-  my $model;
   print "running tests for $project\n";
   my $test_glob = $config->{$project}->{test_glob} || 't/*.t t/*/t/*.t';
-  eval {
-    $model = Test::TAP::Model::Visual->new_with_tests(glob($test_glob));
-  };
-
-  if ($@) {
-    print "Tests aborted: $@\n";
-  }
-
-  my $duration = $model->structure->{end_time} - $model->structure->{start_time};
+  my $tmpfile = File::Temp->new( SUFFIX => ".tar.gz" );
+  my $harness = TAP::Harness::Archive->new( {
+      archive          => $tmpfile,
+      extra_properties => {
+          project   => $project,
+          revision  => $revision,
+          committer => $committer,
+          osname    => $Config{osname},
+          osvers    => $Config{osvers},
+          archname  => $Config{archname},
+      }
+  } );
+  $harness->runtests(glob($test_glob));
 
   $self->_unroll_env_stack;
 
@@ -180,16 +181,7 @@ sub _smoke_once {
   $self->_clean_dbs;
 
   my $client = Test::Chimps::Client->new(
-    model            => $model,
-    report_variables => {
-      project   => $project,
-      revision  => $revision,
-      committer => $committer,
-      duration  => $duration,
-      osname    => $Config{osname},
-      osvers    => $Config{osvers},
-      archname  => $Config{archname}
-    },
+    archive => $tmpfile,
     server => $self->server
   );
 
@@ -203,7 +195,9 @@ sub _smoke_once {
 
   if ($status) {
     print "Sumbitted smoke report for $project revision $revision\n";
-    DumpFile($self->config_file, $config);
+    $self->_config(LoadFile($self->config_file));
+    $self->_config->{$project}->{revision} = $revision;
+    DumpFile($self->config_file, $self->_config);
     return 1;
   } else {
     print "Error: the server responded: $msg\n";
