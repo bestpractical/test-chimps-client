@@ -166,7 +166,7 @@ sub _smoke_once {
           osvers    => $Config{osvers},
           archname  => $Config{archname},
       },
-      jobs => $config->{$project}{jobs} || $self->{jobs},
+      jobs => ($config->{$project}{jobs} || $self->{jobs}),
       lib => \@libs,
   } );
   $harness->runtests(glob($test_glob));

@@ -20,7 +20,7 @@ GetOptions("server|s=s",      \$server,
            "iterations|i=i",  \$iterations,
            "projects|p=s",    \$projects,
            "help|h",          \$help,
-           "jobs|j",          \$jobs)
+           "jobs|j=i",        \$jobs)
   || pod2usage(-exitval => 2,
                -verbose => 1);
 
