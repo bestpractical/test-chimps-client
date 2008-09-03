@@ -5,10 +5,11 @@ use strict;
 
 use Carp;
 use Params::Validate qw/:all/;
+use HTTP::Request::Common;
 use LWP::UserAgent;
 use Storable qw/nfreeze/;
 
-use constant PROTO_VERSION => 0.2;
+use constant PROTO_VERSION => 1.0;
 
 =head1 NAME
 
@@ -20,7 +21,7 @@ Version 0.05
 
 =cut
 
-our $VERSION = '0.05';
+our $VERSION = '0.10';
 
 =head1 SYNOPSIS
 
@@ -55,11 +56,7 @@ Creates a new Client object.  ARGS is a hash whose valid keys are:
 
 =over 4
 
-=item * compress
-
-Optional.  Does not currently work
-
-=item * model
+=item * file
 
 Mandatory.  The value must be a C<Test::TAP::Model>.  These are the
 test results that will be submitted to the server.
@@ -79,7 +76,7 @@ Mandatory.  The URI of the server script to upload the model to.
 
 use base qw/Class::Accessor/;
 
-__PACKAGE__->mk_ro_accessors(qw/model server compress report_variables/);
+__PACKAGE__->mk_ro_accessors(qw/archive server/);
 
 sub new {
   my $class = shift;
@@ -94,9 +91,8 @@ sub _init {
     params => \@_,
     called => 'The Test::Chimps::Client constructor',
     spec   => {
-      model            => { isa => 'Test::TAP::Model' },
+      archive          => { isa => 'File::Temp' },
       server           => 1,
-      compress         => 0,
       report_variables => {
         optional => 1,
         type     => HASHREF,
@@ -120,32 +116,36 @@ and the second of which is an error string.
 =cut
 
 sub send {
-  my $self = shift;
-  
-  my $ua = LWP::UserAgent->new;
-  $ua->agent("Test-Chimps-Client/" . PROTO_VERSION);
-  $ua->env_proxy;
+    my $self = shift;
 
-  my %request = (upload => 1, version => PROTO_VERSION,
-                 model_structure => nfreeze($self->model->structure),
-                 report_variables => nfreeze($self->report_variables));
+    my $ua = LWP::UserAgent->new;
+    $ua->agent( "Test-Chimps-Client/" . PROTO_VERSION );
+    $ua->env_proxy;
 
-  my $resp = $ua->post($self->server => \%request);
-  if($resp->is_success) {
-    if($resp->content =~ /^ok/) {
-      return (1, '');
+    my $resp = $ua->post(
+        $self->server,
+        Content_Type => 'form-data',
+        Content      => [
+            upload  => 1,
+            archive => [ "$self->{archive}" ],
+            version => PROTO_VERSION
+        ],
+    );
+
+    if ( $resp->is_success ) {
+        if ( $resp->content =~ /^ok/ ) {
+            return ( 1, '' );
+        } else {
+            return ( 0, $resp->content );
+        }
     } else {
-      return (0, $resp->content);
+        return ( 0, $resp->status_line );
     }
-  } else {
-    return (0, $resp->status_line);
-  }
 }
 
 =head1 ACCESSORS
 
-There are read-only accessors for compress, model,
-report_variables, and server.
+There are read-only accessors for model, report_variables, and server.
 
 =head1 AUTHOR
 
