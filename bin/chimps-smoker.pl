@@ -13,12 +13,14 @@ my $config_file = File::Spec->catfile($ENV{HOME}, 'smoker-config.yml');
 my $iterations = 'inf';
 my $projects = 'all';
 my $help = 0;
+my $jobs = 1;
 
 GetOptions("server|s=s",      \$server,
            "config_file|c=s", \$config_file,
            "iterations|i=i",  \$iterations,
            "projects|p=s",    \$projects,
-           "help|h",          \$help)
+           "help|h",          \$help,
+           "jobs|j",          \$jobs)
   || pod2usage(-exitval => 2,
                -verbose => 1);
 
@@ -45,11 +47,13 @@ if ($projects ne 'all') {
 
 my $poller = Test::Chimps::Smoker->new(
   server      => $server,
-  config_file => $config_file
+  config_file => $config_file,
+  jobs        => $jobs,
 );
 
 $poller->smoke(iterations => $iterations,
-               projects => $projects);
+               projects => $projects,
+           );
   
 __DATA__
 
@@ -60,7 +64,7 @@ chimps-smoker.pl - continually smoke projects
 =head1 SYNOPSIS
 
 chimps-smoker.pl --server SERVER --config_file CONFIG_FILE
-    [--iterations N] [--projects PROJECT1,PROJECT2,... ]
+    [--iterations N] [--projects PROJECT1,PROJECT2,... ] [--jobs n]
 
 This program is a wrapper around Test::Chimps::Smoker, which allows
 you to specify common options on the command line.
@@ -88,6 +92,10 @@ continue smoking forever.  Defaults to 'inf'.
 
 A comma-separated list of projects to smoke.  If the string 'all'
 is provided, all projects will be smoked.  Defaults to 'all'.
+
+=head2 --jobs, -j
+
+The number of parallel processes to use when running tests.
 
 =head1 AUTHOR
 

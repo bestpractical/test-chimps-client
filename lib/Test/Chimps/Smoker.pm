@@ -93,7 +93,13 @@ sub _init {
       projects => {
         optional => 1,
         default  => 'all'
-      }
+      },
+      jobs => {
+        optional => 1,
+        type     => SCALAR,
+        regex    => qr/^\d+$/,
+        default  => 1,
+      },
     },
     called => 'The Test::Chimps::Smoker constructor'
   );
@@ -146,6 +152,7 @@ sub _smoke_once {
   my $committer = $1;
 
   $self->_checkout_project($config->{$project}, $revision);
+  my @dbs = $self->_list_dbs;
 
   print "running tests for $project\n";
   my $test_glob = $config->{$project}->{test_glob} || 't/*.t t/*/t/*.t';
@@ -159,7 +166,8 @@ sub _smoke_once {
           osname    => $Config{osname},
           osvers    => $Config{osvers},
           archname  => $Config{archname},
-      }
+      },
+      jobs => $self->{jobs},
   } );
   $harness->runtests(glob($test_glob));
 
@@ -178,7 +186,7 @@ sub _smoke_once {
   }
   $self->_checkout_paths([]);
 
-  $self->_clean_dbs;
+  $self->_clean_dbs(@dbs);
 
   my $client = Test::Chimps::Client->new(
     archive => $tmpfile,
@@ -353,13 +361,18 @@ sub _checkout_project {
   return $projectdir;
 }
 
-sub _clean_dbs {
-    my %skip = map {$_ => 1} (qw/postgres template0 template1 smoke jifty jiftydbitestdb/);
+sub _list_dbs {
+    local $ENV{DBI_USER} = "postgres";
+    return map {s/.*dbname=(.*)/$1/ ? $_ : () }
+        DBI->data_sources("Pg");
+}
 
-    $ENV{DBI_USER} = "postgres";
+sub _clean_dbs {
+    my %skip = map {($_ => 1)} @_;
+
+    local $ENV{DBI_USER} = "postgres";
     my @dbs = grep {not $skip{$_}} 
-              map {s/.*dbname=(.*)/$1/; $_}
-              DBI->data_sources("Pg");
+              _list_dbs();
 
     my $dbh = DBI->connect("dbi:Pg:dbname=template1","postgres","",{RaiseError => 1});
     $dbh->do("DROP DATABASE $_") for @dbs;
