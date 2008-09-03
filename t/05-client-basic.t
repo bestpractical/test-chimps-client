@@ -1,8 +1,6 @@
-#!perl -T
+#!perl
 
 use Test::More tests => 6;
-
-use Test::TAP::Model::Visual;
 
 BEGIN {
   use_ok( 'Test::Chimps::Client' );
