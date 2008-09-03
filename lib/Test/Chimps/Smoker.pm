@@ -66,7 +66,7 @@ file.
 use base qw/Class::Accessor/;
 __PACKAGE__->mk_ro_accessors(qw/server config_file simulate/);
 __PACKAGE__->mk_accessors(
-  qw/_added_to_inc _env_stack _checkout_paths _config projects iterations/);
+  qw/_env_stack _checkout_paths _config projects iterations/);
 
 # add a signal handler so destructor gets run
 $SIG{INT} = sub {print "caught sigint.  cleaning up...\n"; exit(1)};
@@ -107,7 +107,6 @@ sub _init {
   foreach my $key (keys %args) {
     $self->{$key} = $args{$key};
   }
-  $self->_added_to_inc([]);
   $self->_env_stack([]);
   $self->_checkout_paths([]);
 
@@ -151,7 +150,7 @@ sub _smoke_once {
   $info_out =~ m/^Last Changed Author: (\w+)/m;
   my $committer = $1;
 
-  $self->_checkout_project($config->{$project}, $revision);
+  my @libs = $self->_checkout_project($config->{$project}, $revision);
   my @dbs = $self->_list_dbs;
 
   print "running tests for $project\n";
@@ -167,17 +166,12 @@ sub _smoke_once {
           osvers    => $Config{osvers},
           archname  => $Config{archname},
       },
-      jobs => $self->{jobs},
+      jobs => $config->{$project}{jobs} || $self->{jobs},
+      lib => \@libs,
   } );
   $harness->runtests(glob($test_glob));
 
   $self->_unroll_env_stack;
-
-  foreach my $libdir (@{$self->_added_to_inc}) {
-    print "removing $libdir from \@INC\n";
-    shift @INC;
-  }
-  $self->_added_to_inc([]);
 
   chdir(File::Spec->rootdir);
 
@@ -337,28 +331,15 @@ sub _checkout_project {
 
   chdir($projectdir);
 
-  my $old_perl5lib = $ENV{PERL5LIB};
-  $ENV{PERL5LIB} = join($Config{path_sep}, @{$self->_added_to_inc}) .
-    ':' . $ENV{PERL5LIB};
-  if (defined $project->{configure_cmd}) {
-    system($project->{configure_cmd});
-  }
-  $ENV{PERL5LIB} = $old_perl5lib;
+  system($project->{configure_cmd})
+      if defined $project->{configure_cmd};
 
   my @libs = qw{blib/lib};
   push @libs, @{$project->{libs}} if $project->{libs};
 
-  for my $libloc (@libs) {
-    my $libdir = File::Spec->catdir($tmpdir,
-                                    $project->{root_dir},
-                                    $libloc);
-    print "adding $libdir to \@INC\n";
-    unshift @{$self->_added_to_inc}, $libdir;
-    unshift @INC, $libdir;
-  }
+  @libs = map {File::Spec->catdir($tmpdir, $project->{root_dir}, $_)} @libs;
 
-
-  return $projectdir;
+  return @libs;
 }
 
 sub _list_dbs {
