@@ -322,10 +322,11 @@ sub _checkout_project {
 
   my $projectdir = File::Spec->catdir($tmpdir, $project->{root_dir});
 
+  my @otherlibs;
   if (defined $project->{dependencies}) {
     foreach my $dep (@{$project->{dependencies}}) {
       print "processing dependency $dep\n";
-      $self->_checkout_project($self->_config->{$dep}, 'HEAD');
+      push @otherlibs, $self->_checkout_project($self->_config->{$dep}, 'HEAD');
     }
   }
 
@@ -339,7 +340,7 @@ sub _checkout_project {
 
   @libs = map {File::Spec->catdir($tmpdir, $project->{root_dir}, $_)} @libs;
 
-  return @libs;
+  return @libs, @otherlibs;
 }
 
 sub _list_dbs {
