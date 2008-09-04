@@ -330,17 +330,20 @@ sub _checkout_project {
     }
   }
 
+  my @libs = qw{blib/lib};
+  push @libs, @{$project->{libs}} if $project->{libs};
+  @libs = map {File::Spec->catdir($tmpdir, $project->{root_dir}, $_)} @libs;
+
+  my %seen;
+  @libs = grep {not $seen{$_}++} @libs, @otherlibs;
+
   chdir($projectdir);
 
+  local $ENV{PERL5LIB} = join(":",@libs,$ENV{PERL5LIB});
   system($project->{configure_cmd})
       if defined $project->{configure_cmd};
 
-  my @libs = qw{blib/lib};
-  push @libs, @{$project->{libs}} if $project->{libs};
-
-  @libs = map {File::Spec->catdir($tmpdir, $project->{root_dir}, $_)} @libs;
-
-  return @libs, @otherlibs;
+  return @libs;
 }
 
 sub _list_dbs {
