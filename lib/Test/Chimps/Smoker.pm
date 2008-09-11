@@ -169,7 +169,12 @@ sub _smoke_once {
       jobs => ($config->{$project}{jobs} || $self->{jobs}),
       lib => \@libs,
   } );
-  $harness->runtests(glob($test_glob));
+  {
+      # Runtests apparently grows PERL5LIB -- local it so it doesn't
+      # grow without bound
+      local $ENV{PERL5LIB} = $ENV{PERL5LIB};
+      $harness->runtests(glob($test_glob));
+  }
 
   $self->_unroll_env_stack;
 
