@@ -152,6 +152,13 @@ sub _smoke_once {
   my $committer = $1;
 
   my @libs = $self->_checkout_project($config->{$project}, $revision);
+  unless (@libs) {
+    print "Skipping report report for $project revision $revision due to build failure\n";
+    $self->_config(LoadFile($self->config_file));
+    $self->_config->{$project}->{revision} = $revision;
+    DumpFile($self->config_file, $self->_config);
+    return 0;
+  }
   my @dbs = $self->_list_dbs;
 
   print "running tests for $project\n";
@@ -332,7 +339,13 @@ sub _checkout_project {
   if (defined $project->{dependencies}) {
     foreach my $dep (@{$project->{dependencies}}) {
       print "processing dependency $dep\n";
-      push @otherlibs, $self->_checkout_project($self->_config->{$dep}, 'HEAD');
+      my @deplibs = $self->_checkout_project($self->_config->{$dep}, 'HEAD');
+      if (@deplibs) {
+          push @otherlibs, @deplibs;
+      } else {
+          print "Dependency $dep failed; aborting";
+          return ();
+      }
     }
   }
 
@@ -343,11 +356,21 @@ sub _checkout_project {
   my %seen;
   @libs = grep {not $seen{$_}++} @libs, @otherlibs;
 
-  chdir($projectdir);
+  unless (chdir($projectdir)) {
+      print "chdir to $projectdir failed -- check value of root_dir?\n";
+      return ();
+  }
 
   local $ENV{PERL5LIB} = join(":",@libs,$ENV{PERL5LIB});
-  system($project->{configure_cmd})
-      if defined $project->{configure_cmd};
+
+  if (defined $project->{configure_cmd}) {
+      my $ret = system($project->{configure_cmd});
+      if ($ret) {
+          print "Return value of @{[$project->{configure_cmd}]} from $projectdir = $ret\n"
+            if $ret;
+          return ();
+      }
+  }
 
   return @libs;
 }
