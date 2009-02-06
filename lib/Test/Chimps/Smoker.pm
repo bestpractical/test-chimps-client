@@ -70,6 +70,7 @@ __PACKAGE__->mk_accessors(
 
 # add a signal handler so destructor gets run
 $SIG{INT} = sub {print "caught sigint.  cleaning up...\n"; exit(1)};
+$ENV{PERL5LIB} = "" unless defined $ENV{PERL5LIB}; # Warnings avoidance
 
 sub new {
   my $class = shift;
