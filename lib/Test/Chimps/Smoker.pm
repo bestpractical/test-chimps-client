@@ -66,7 +66,7 @@ file.
 use base qw/Class::Accessor/;
 __PACKAGE__->mk_ro_accessors(qw/server config_file simulate/);
 __PACKAGE__->mk_accessors(
-  qw/_env_stack _checkout_paths _config projects iterations/);
+  qw/_env_stack checkout_paths config projects iterations/);
 
 # add a signal handler so destructor gets run
 $SIG{INT} = sub {print "caught sigint.  cleaning up...\n"; exit(1)};
@@ -109,14 +109,30 @@ sub _init {
     $self->{$key} = $args{$key};
   }
   $self->_env_stack([]);
-  $self->_checkout_paths([]);
+  $self->checkout_paths({});
 
-  $self->_config(LoadFile($self->config_file));
+  $self->load_config;
+}
+
+sub load_config {
+    my $self = shift;
+
+    my $cfg = $self->config(LoadFile($self->config_file));
+    $cfg->{$_}->{'name'} = $_ foreach keys %$cfg;
+}
+
+sub update_revision {
+    my $self = shift;
+    my ($project, $revision) = @_;
+
+    my $tmp = LoadFile($self->config_file));
+    $tmp->{$project}->{revision} = $self->config->{$project}->{revision} = $revision;
+    DumpFile($self->config_file, $tmp);
 }
 
 sub DESTROY {
   my $self = shift;
-  foreach my $tmpdir (@{$self->_checkout_paths}) {
+  foreach my $tmpdir (values %{$self->checkout_paths}) {
     _remove_tmpdir($tmpdir);
   }
 }
@@ -124,7 +140,7 @@ sub DESTROY {
 sub _smoke_once {
   my $self = shift;
   my $project = shift;
-  my $config = $self->_config;
+  my $config = $self->config;
 
   return 1 if $config->{$project}->{dependency_only};
 
@@ -154,9 +170,9 @@ sub _smoke_once {
   my @libs = $self->_checkout_project($config->{$project}, $revision);
   unless (@libs) {
     print "Skipping report report for $project revision $revision due to build failure\n";
-    $self->_config(LoadFile($self->config_file));
-    $self->_config->{$project}->{revision} = $revision;
-    DumpFile($self->config_file, $self->_config);
+    $self->config(LoadFile($self->config_file));
+    $self->config->{$project}->{revision} = $revision;
+    DumpFile($self->config_file, $self->config);
     return 0;
   }
   my @dbs = $self->_list_dbs;
@@ -188,10 +204,10 @@ sub _smoke_once {
 
   chdir(File::Spec->rootdir);
 
-  foreach my $tmpdir (@{$self->_checkout_paths}) {
+  foreach my $tmpdir (values %{$self->checkout_paths}) {
     _remove_tmpdir($tmpdir);
   }
-  $self->_checkout_paths([]);
+  $self->checkout_paths({});
 
   $self->_clean_dbs(@dbs);
 
@@ -210,9 +226,7 @@ sub _smoke_once {
 
   if ($status) {
     print "Sumbitted smoke report for $project revision $revision\n";
-    $self->_config(LoadFile($self->config_file));
-    $self->_config->{$project}->{revision} = $revision;
-    DumpFile($self->config_file, $self->_config);
+    $self->update_revision( $project => $revision );
     return 1;
   } else {
     print "Error: the server responded: $msg\n";
@@ -243,7 +257,6 @@ sub _smoke_n_times {
 sub _smoke_projects {
   my $self = shift;
   my $projects = shift;
-  my $config = $self->_config;
 
   foreach my $project (@$projects) {
     $self->_smoke_once($project);
@@ -279,7 +292,7 @@ projects will be smoked.  Defaults to 'all'.
 
 sub smoke {
   my $self = shift;
-  my $config = $self->_config;
+  my $config = $self->config;
 
   my %args = validate_with(
     params => \@_,
@@ -317,7 +330,7 @@ sub _validate_projects_opt {
 
   foreach my $project (@$projects) {
     die "no such project: '$project'"
-      unless exists $self->_config->{$project};
+      unless exists $self->config->{$project};
   }
 }
 
@@ -327,7 +340,7 @@ sub _checkout_project {
   my $revision = shift;
 
   my $tmpdir = tempdir("chimps-svn-XXXXXXX", TMPDIR => 1);
-  unshift @{$self->_checkout_paths}, $tmpdir;
+  $self->checkout_paths->{ $project->{'name'} } = $tmpdir;
 
   system("svn", "co", "-r", $revision, $project->{svn_uri}, $tmpdir);
 
@@ -338,8 +351,10 @@ sub _checkout_project {
   my @otherlibs;
   if (defined $project->{dependencies}) {
     foreach my $dep (@{$project->{dependencies}}) {
+      next if $self->checkout_paths->{ $dep };
+
       print "processing dependency $dep\n";
-      my @deplibs = $self->_checkout_project($self->_config->{$dep}, 'HEAD');
+      my @deplibs = $self->_checkout_project($self->config->{$dep}, 'HEAD');
       if (@deplibs) {
           push @otherlibs, @deplibs;
       } else {

@@ -4,6 +4,7 @@ use Test::More tests => 6;
 
 BEGIN {
   use_ok( 'Test::Chimps::Client' );
+  use_ok( 'Test::TAP::Model::Visual' );
 }
 
 my $m = Test::TAP::Model::Visual->new_with_tests('t-data/bogus-tests/00-basic.t');
