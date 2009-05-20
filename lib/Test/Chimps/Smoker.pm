@@ -125,7 +125,7 @@ sub update_revision {
     my $self = shift;
     my ($project, $revision) = @_;
 
-    my $tmp = LoadFile($self->config_file));
+    my $tmp = LoadFile($self->config_file);
     $tmp->{$project}->{revision} = $self->config->{$project}->{revision} = $revision;
     DumpFile($self->config_file, $tmp);
 }
