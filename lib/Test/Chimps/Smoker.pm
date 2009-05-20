@@ -347,14 +347,14 @@ sub _checkout_project {
 
   system("svn", "co", "-r", $revision, $project->{svn_uri}, $tmpdir);
 
-  $self->_push_onto_env_stack($project->{env});
-
   my $projectdir = $self->meta->{ $project->{'name'} }{'root'}
     = File::Spec->catdir($tmpdir, $project->{root_dir});
 
   my @libs = map File::Spec->catdir($projectdir, $_),
     'blib/lib', @{ $project->{libs} || [] };
   $self->meta->{ $project->{'name'} }{'libs'} = [@libs];
+
+  $self->_push_onto_env_stack($project->{env}, 'CHIMPS_'. uc($project->{'name'}) .'_ROOT' => $projectdir);
 
   my @otherlibs;
   if (defined $project->{dependencies}) {
