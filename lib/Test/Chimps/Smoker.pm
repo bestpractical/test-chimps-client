@@ -170,9 +170,7 @@ sub _smoke_once {
   my @libs = $self->_checkout_project($config->{$project}, $revision);
   unless (@libs) {
     print "Skipping report report for $project revision $revision due to build failure\n";
-    $self->config(LoadFile($self->config_file));
-    $self->config->{$project}->{revision} = $revision;
-    DumpFile($self->config_file, $self->config);
+    $self->update_revision( $project => $revision );
     return 0;
   }
   my @dbs = $self->_list_dbs;
