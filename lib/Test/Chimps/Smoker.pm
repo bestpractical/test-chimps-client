@@ -66,7 +66,7 @@ file.
 use base qw/Class::Accessor/;
 __PACKAGE__->mk_ro_accessors(qw/server config_file simulate/);
 __PACKAGE__->mk_accessors(
-  qw/_env_stack checkout_paths config projects iterations/);
+  qw/_env_stack meta config projects iterations/);
 
 # add a signal handler so destructor gets run
 $SIG{INT} = sub {print "caught sigint.  cleaning up...\n"; exit(1)};
@@ -109,7 +109,7 @@ sub _init {
     $self->{$key} = $args{$key};
   }
   $self->_env_stack([]);
-  $self->checkout_paths({});
+  $self->meta({});
 
   $self->load_config;
 }
@@ -131,10 +131,8 @@ sub update_revision {
 }
 
 sub DESTROY {
-  my $self = shift;
-  foreach my $tmpdir (values %{$self->checkout_paths}) {
-    _remove_tmpdir($tmpdir);
-  }
+    my $self = shift;
+    $self->remove_checkouts;
 }
 
 sub _smoke_once {
@@ -202,10 +200,7 @@ sub _smoke_once {
 
   chdir(File::Spec->rootdir);
 
-  foreach my $tmpdir (values %{$self->checkout_paths}) {
-    _remove_tmpdir($tmpdir);
-  }
-  $self->checkout_paths({});
+  $self->remove_checkouts;
 
   $self->_clean_dbs(@dbs);
 
@@ -230,6 +225,16 @@ sub _smoke_once {
     print "Error: the server responded: $msg\n";
     return 0;
   }
+}
+
+sub remove_checkouts {
+    my $self = shift;
+
+    my $meta = $self->meta;
+    foreach my $tmpdir (grep length && defined, map $_->{'checkout'}, values %$meta ) {
+        _remove_tmpdir($tmpdir);
+    }
+    delete @{$_}{'checkout'} foreach values %$meta;
 }
 
 sub _smoke_n_times {
@@ -338,18 +343,26 @@ sub _checkout_project {
   my $revision = shift;
 
   my $tmpdir = tempdir("chimps-svn-XXXXXXX", TMPDIR => 1);
-  $self->checkout_paths->{ $project->{'name'} } = $tmpdir;
+  $self->meta->{ $project->{'name'} }{'checkout'} = $tmpdir;
 
   system("svn", "co", "-r", $revision, $project->{svn_uri}, $tmpdir);
 
   $self->_push_onto_env_stack($project->{env});
 
-  my $projectdir = File::Spec->catdir($tmpdir, $project->{root_dir});
+  my $projectdir = $self->meta->{ $project->{'name'} }{'root'}
+    = File::Spec->catdir($tmpdir, $project->{root_dir});
+
+  my @libs = map File::Spec->catdir($projectdir, $_),
+    'blib/lib', @{ $project->{libs} || [] };
+  $self->meta->{ $project->{'name'} }{'libs'} = [@libs];
 
   my @otherlibs;
   if (defined $project->{dependencies}) {
     foreach my $dep (@{$project->{dependencies}}) {
-      next if $self->checkout_paths->{ $dep };
+      if ( $self->meta->{ $dep }{'checkout'} ) {
+          push @otherlibs, @{ $self->meta->{ $dep }{'libs'} };
+          next;
+      }
 
       print "processing dependency $dep\n";
       my @deplibs = $self->_checkout_project($self->config->{$dep}, 'HEAD');
@@ -361,10 +374,6 @@ sub _checkout_project {
       }
     }
   }
-
-  my @libs = qw{blib/lib};
-  push @libs, @{$project->{libs}} if $project->{libs};
-  @libs = map {File::Spec->catdir($tmpdir, $project->{root_dir}, $_)} @libs;
 
   my %seen;
   @libs = grep {not $seen{$_}++} @libs, @otherlibs;
