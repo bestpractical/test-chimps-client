@@ -34,6 +34,12 @@ sub clone {
     return 1;
 }
 
+sub clean {
+    my $self = shift;
+    system qw(git clean -fd);
+    system qw(git checkout master);
+}
+
 sub checkout {
     my $self = shift;
     my %args = @_;
