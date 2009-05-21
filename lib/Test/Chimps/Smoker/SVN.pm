@@ -24,12 +24,6 @@ sub committer {
     return ($self->revision_info( @_ ))[2];
 }
 
-sub is_change_on_revision {
-    my $self = shift;
-    my ($latest_revision, $last_changed) = $self->revision_info(@_);
-    return $latest_revision == $last_changed;
-}
-
 sub checkout {
     my $self = shift;
     my %args = @_;
@@ -37,29 +31,20 @@ sub checkout {
     system("svn", "co", "-r", ($args{'revision'} || 'HEAD'), $self->uri, $self->directory);
 }
 
+sub clean {
+    my $self = shift;
+    system(qw(svn revert -R .));
+}
+
 sub next {
     my $self = shift;
-    my ($latest_revision, $last_changed_revision) = $self->revision_info;
 
-    my $old_revision = $self->config->{revision};
+    my $revision = $self->config->{revision};
+    my $cmd = "svn log -l1 -q -r $revision:HEAD ". $self->uri;
+    my ($next, $committer) = (`$cmd` =~ m/^r([0-9]+)\s+\|\s*.*?\s*\|/m);
+    return () unless $next;
 
-    return () unless $last_changed_revision > $old_revision;
-
-    my @revisions = (($old_revision + 1) .. $latest_revision);
-    my $revision;
-    while (@revisions) {
-        $revision = shift @revisions;
-
-# only actually do the check out if the revision and last changed revision match for
-# a particular revision
-        last if $self->is_change_on_revision($revision);
-    }
-    return () unless $revision;
-
-    my $committer = $self->committer($revision);
-
-
-    return (revision => $revision, committer => $committer);
+    return (revision => $next, committer => $committer);
 }
 
 1;
