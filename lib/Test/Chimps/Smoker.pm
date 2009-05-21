@@ -54,7 +54,9 @@ L</"CONFIGURATION FILE">.
 
 Mandatory.  The URI of the server script to upload the reports to.
 
-=item * simulate
+=item * simulate [DEPRECATED]
+
+[DEPRECATED] Just don't provide server to send files to.
 
 Don't actually submit the smoke reports, just run the tests.  This
 I<does>, however, increment the revision numbers in the config
@@ -223,27 +225,25 @@ sub _smoke_once {
 
     $self->_clean_dbs(@dbs);
 
-    my $client = Test::Chimps::Client->new(
-        archive => $tmpfile,
-        server => $self->server
-      );
+    if ( my $server = $self->server ) {
+        my $client = Test::Chimps::Client->new(
+            archive => $tmpfile, server => $server,
+        );
 
-    my ($status, $msg);
-    if ($self->simulate) {
-        $status = 1;
-    } else {
-        print "Sending smoke report for @{[$self->server]}\n";
-        ($status, $msg) = $client->send;
+        print "Sending smoke report for $server\n";
+        my ($status, $msg) = $client->send;
+        unless ( $status ) {
+            print "Error: the server responded: $msg\n";
+            return 0;
+        }
+    }
+    else {
+        print "Server is not specified, don't send the report\n";
     }
 
-    if ($status) {
-        print "Sumbitted smoke report for $project revision $revision\n";
-        $self->update_revision_in_config( $project => $revision );
-        return 1;
-    } else {
-        print "Error: the server responded: $msg\n";
-        return 0;
-    }
+    print "Done smoking revision $revision of $project\n";
+    $self->update_revision_in_config( $project => $revision );
+    return 1;
 }
 
 sub remove_checkouts {
