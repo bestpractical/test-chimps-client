@@ -3,6 +3,7 @@ package Test::Chimps::Smoker::Source;
 use strict;
 use warnings;
 use base qw/Class::Accessor/;
+use Scalar::Util qw(weaken);
 
 __PACKAGE__->mk_ro_accessors(qw/config smoker/);
 __PACKAGE__->mk_accessors(qw/directory cloned/);
@@ -18,6 +19,7 @@ sub new {
     eval "require $class; 1" or die "Couldn't load $class: $@";
 
     my $obj = bless { %args }, $class;
+    weaken $obj->{'smoker'};
     return $obj->_init;
 }
 

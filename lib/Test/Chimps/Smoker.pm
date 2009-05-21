@@ -157,6 +157,7 @@ sub source {
     $self->meta->{$project}{'source'} ||= Test::Chimps::Smoker::Source->new(
             %{ $self->config->{$project}{'repository'} },
             config => $self->config->{$project},
+            smoker => $self,
         );
     return $self->meta->{$project}{'source'};
 }
