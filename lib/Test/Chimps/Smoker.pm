@@ -8,6 +8,7 @@ use File::Basename;
 use File::Path;
 use File::Temp qw/tempdir/;
 use Params::Validate qw/:all/;
+use Test::Chimps::Smoker::Source;
 use Test::Chimps::Client;
 use TAP::Harness::Archive;
 use YAML::Syck;
@@ -118,10 +119,25 @@ sub load_config {
     my $self = shift;
 
     my $cfg = $self->config(LoadFile($self->config_file));
+
+    # update old style config file
+    {
+        my $found_old_style = 0;
+        foreach ( grep $_->{svn_uri}, values %$cfg ) {
+            $found_old_style = 1;
+
+            $_->{'repository'} = {
+                type => 'SVN',
+                uri  => delete $_->{svn_uri},
+            };
+        }
+        DumpFile($self->config_file, $cfg) if $found_old_style;
+    }
+
     $cfg->{$_}->{'name'} = $_ foreach keys %$cfg;
 }
 
-sub update_revision {
+sub update_revision_in_config {
     my $self = shift;
     my ($project, $revision) = @_;
 
@@ -135,59 +151,50 @@ sub DESTROY {
     $self->remove_checkouts;
 }
 
+sub source {
+    my $self = shift;
+    my $project = shift;
+    $self->meta->{$project}{'source'} ||= Test::Chimps::Smoker::Source->new(
+            %{ $self->config->{$project}{'repository'} },
+            config => $self->config->{$project},
+        );
+    return $self->meta->{$project}{'source'};
+}
+
 sub _smoke_once {
     my $self = shift;
     my $project = shift;
-    my $config = $self->config;
 
-    return 1 if $config->{$project}->{dependency_only};
+    my $config = $self->config->{$project};
+    return 1 if $config->{dependency_only};
 
-    my $info_out = `svn info $config->{$project}->{svn_uri}`;
-    $info_out =~ m/^Revision: (\d+)/m;
-    my $latest_revision = $1;
-    $info_out =~ m/^Last Changed Rev: (\d+)/m;
-    my $last_changed_revision = $1;
+    my %next = $self->source($project)->next( $config->{revision} );
+    return 0 unless keys %next;
 
-    my $old_revision = $config->{$project}->{revision};
+    my $revision = $next{'revision'};
 
-    return 0 unless $last_changed_revision > $old_revision;
-
-    my @revisions = (($old_revision + 1) .. $latest_revision);
-    my $revision;
-    while (@revisions) {
-        $revision = shift @revisions;
-
-# only actually do the check out if the revision and last changed revision match for
-# a particular revision
-        last if _change_on_revision($config->{$project}->{svn_uri}, $revision);
-    }
-
-    $info_out = `svn info -r $revision $config->{$project}->{svn_uri}`;
-    $info_out =~ m/^Last Changed Author: (\w+)/m;
-    my $committer = $1;
-
-    my @libs = $self->_checkout_project($config->{$project}, $revision);
+    my @libs = $self->_checkout_project($config, $revision);
     unless (@libs) {
         print "Skipping report report for $project revision $revision due to build failure\n";
-        $self->update_revision( $project => $revision );
+        $self->update_revision_in_config( $project => $revision );
         return 0;
     }
     my @dbs = $self->_list_dbs;
 
     print "running tests for $project\n";
-    my $test_glob = $config->{$project}->{test_glob} || 't/*.t t/*/t/*.t';
+    my $test_glob = $config->{test_glob} || 't/*.t t/*/t/*.t';
     my $tmpfile = File::Temp->new( SUFFIX => ".tar.gz" );
     my $harness = TAP::Harness::Archive->new( {
             archive          => $tmpfile,
             extra_properties => {
                 project   => $project,
                 revision  => $revision,
-                committer => $committer,
+                committer => $next{'committer'},
                 osname    => $Config{osname},
                 osvers    => $Config{osvers},
                 archname  => $Config{archname},
               },
-            jobs => ($config->{$project}{jobs} || $self->{jobs}),
+            jobs => ($config->{jobs} || $self->{jobs}),
             lib => \@libs,
         } );
     {
@@ -221,7 +228,7 @@ sub _smoke_once {
 
     if ($status) {
         print "Sumbitted smoke report for $project revision $revision\n";
-        $self->update_revision( $project => $revision );
+        $self->update_revision_in_config( $project => $revision );
         return 1;
     } else {
         print "Error: the server responded: $msg\n";
@@ -347,7 +354,9 @@ sub _checkout_project {
     my $tmpdir = tempdir("chimps-svn-XXXXXXX", TMPDIR => 1);
     $self->meta->{ $project->{'name'} }{'checkout'} = $tmpdir;
 
-    system("svn", "co", "-r", $revision, $project->{svn_uri}, $tmpdir);
+    my $source = $self->source( $project->{'name'} )->checkout(
+        revision => $revision, directory => $tmpdir
+    );
 
     my $projectdir = $self->meta->{ $project->{'name'} }{'root'}
       = File::Spec->catdir($tmpdir, $project->{root_dir});
@@ -422,19 +431,6 @@ sub _remove_tmpdir {
     rmtree($tmpdir, 0, 0);
 }
 
-sub _change_on_revision {
-    my $uri = shift;
-    my $revision = shift;
-
-    my $info_out = `svn info -r $revision $uri`;
-    $info_out =~ m/^Revision: (\d+)/m;
-    my $latest_revision = $1;
-    $info_out =~ m/^Last Changed Rev: (\d+)/m;
-    my $last_changed_revision = $1;
-
-    return $latest_revision == $last_changed_revision;
-}
-
 sub _push_onto_env_stack {
     my $self = shift;
     my $vars = shift;
@@ -494,7 +490,9 @@ look like this:
         - Jifty
       revision: 555
       root_dir: trunk/foo
-      svn_uri: svn+ssh://svn.example.com/svn/foo
+      repository:
+        type: svn
+        uri: svn+ssh://svn.example.com/svn/foo
       test_glob: t/*.t t/*/*.t
     Jifty:
       configure_cmd: perl Makefile.PL --skipdeps && make
@@ -502,7 +500,9 @@ look like this:
         - Jifty-DBI
       revision: 1332
       root_dir: trunk
-      svn_uri: svn+ssh://svn.jifty.org/svn/jifty.org/jifty
+      repository:
+        type: svn
+        uri: svn+ssh://svn.jifty.org/svn/jifty.org/jifty
     Jifty-DBI:
       configure_cmd: perl Makefile.PL --skipdeps && make
       env:
@@ -513,7 +513,9 @@ look like this:
         JDBI_TEST_PG_USER: jiftydbitest
       revision: 1358
       root_dir: trunk
-      svn_uri: svn+ssh://svn.jifty.org/svn/jifty.org/Jifty-DBI
+      repository:
+        type: svn
+        uri: svn+ssh://svn.jifty.org/svn/jifty.org/Jifty-DBI
 
 The supported project options are as follows:
 
