@@ -67,7 +67,7 @@ file.
 =cut
 
 use base qw/Class::Accessor/;
-__PACKAGE__->mk_ro_accessors(qw/server config_file simulate/);
+__PACKAGE__->mk_ro_accessors(qw/server config_file simulate sleep/);
 __PACKAGE__->mk_accessors(
     qw/_env_stack meta config projects iterations/);
 
@@ -103,6 +103,12 @@ sub _init {
                 type     => SCALAR,
                 regex    => qr/^\d+$/,
                 default  => 1,
+              },
+            sleep => {
+                optional => 1,
+                type     => SCALAR,
+                regex    => qr/^\d+$/,
+                default  => 60,
               },
           },
         called => 'The Test::Chimps::Smoker constructor'
@@ -268,12 +274,12 @@ sub _smoke_n_times {
     } elsif ($n eq 'inf') {
         while (1) {
             $self->_smoke_projects($projects);
-            sleep 60;
+            CORE::sleep $self->sleep if $self->sleep;
         }
     } else {
         for (my $i = 0; $i < $n;) {
             $i++ if $self->_smoke_projects($projects);
-            sleep 60;
+            CORE::sleep $self->sleep if $self->sleep;
         }
     }
 }
