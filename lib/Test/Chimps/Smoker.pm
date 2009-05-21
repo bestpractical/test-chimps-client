@@ -260,6 +260,7 @@ sub remove_checkouts {
 
         _remove_tmpdir($dir);
         $source->directory(undef);
+        $source->cloned(0);
     }
 }
 
