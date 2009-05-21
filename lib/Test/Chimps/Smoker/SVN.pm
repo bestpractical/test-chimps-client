@@ -34,8 +34,7 @@ sub checkout {
     my $self = shift;
     my %args = @_;
 
-
-    system("svn", "co", "-r", $args{'revision'}, $self->uri, $args{'directory'});
+    system("svn", "co", "-r", $args{'revision'}, $self->uri, $self->directory);
 }
 
 sub next {
