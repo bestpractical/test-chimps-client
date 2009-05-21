@@ -396,7 +396,10 @@ sub _checkout_project {
       'blib/lib', @{ $project->{libs} || [] };
     $self->meta->{ $project->{'name'} }{'libs'} = [@libs];
 
-    $self->_push_onto_env_stack($project->{env}, 'CHIMPS_'. uc($project->{'name'}) .'_ROOT' => $projectdir);
+    $self->_push_onto_env_stack({
+        $project->{env}? (%{$project->{env}}) : (),
+        'CHIMPS_'. uc($project->{'name'}) .'_ROOT' => $projectdir,
+    });
 
     my @otherlibs;
     if (defined $project->{dependencies}) {
