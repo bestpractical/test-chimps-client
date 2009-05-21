@@ -148,7 +148,8 @@ sub load_config {
         }
         DumpFile($self->config_file, $cfg) if $found_old_style;
     }
-
+    
+    # store project name in its hash
     $cfg->{$_}->{'name'} = $_ foreach keys %$cfg;
 }
 
@@ -225,9 +226,7 @@ sub _smoke_once {
 
     $self->_unroll_env_stack;
 
-    chdir(File::Spec->rootdir);
-
-    $self->remove_checkouts;
+    $self->_clean_project( $config );
 
     $self->_clean_dbs(@dbs);
 
@@ -439,6 +438,19 @@ sub _checkout_project {
     }
 
     return @libs;
+}
+
+sub _clean_project {
+    my $self = shift;
+    my $project = shift;
+
+    $self->source( $project->{'name'} )->clean;
+
+    if (defined $project->{dependencies}) {
+        foreach my $dep (@{$project->{dependencies}}) {
+            $self->_clean_project( $self->config->{ $dep } );
+        }
+    }
 }
 
 sub _list_dbs {
