@@ -4,7 +4,7 @@ use warnings;
 use strict;
 
 use Config;
-use File::Basename;
+use Cwd qw(abs_path);
 use File::Path;
 use File::Temp qw/tempdir/;
 use Params::Validate qw/:all/;
@@ -109,6 +109,13 @@ sub _init {
     foreach my $key (keys %args) {
         $self->{$key} = $args{$key};
     }
+
+    # support simulate for a while
+    delete $self->{'server'} if $args{'simulate'};
+
+    # make it absolute so we can update it later from any dir we're in
+    $self->{'config_file'} = abs_path($self->{'config_file'});
+
     $self->_env_stack([]);
     $self->meta({});
 
