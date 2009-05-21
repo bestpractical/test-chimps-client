@@ -169,6 +169,8 @@ sub _smoke_once {
     my $config = $self->config->{$project};
     return 1 if $config->{dependency_only};
 
+    $self->_clone_project( $config );
+
     my %next = $self->source($project)->next( $config->{revision} );
     return 0 unless keys %next;
 
@@ -348,6 +350,23 @@ sub _validate_projects_opt {
     }
 }
 
+sub _clone_project {
+    my $self = shift;
+    my $project = shift;
+
+    my $source = $self->source( $project->{'name'} );
+    return 1 if $source->cloned;
+
+    my $tmpdir = tempdir("chimps-XXXXXXX", TMPDIR => 1);
+    $source->directory( $tmpdir );
+    $source->clone;
+    chdir $tmpdir;
+
+    $source->cloned(1);
+
+    return 1;
+}
+
 sub _checkout_project {
     my $self = shift;
     my $project = shift;
@@ -369,13 +388,15 @@ sub _checkout_project {
     my @otherlibs;
     if (defined $project->{dependencies}) {
         foreach my $dep (@{$project->{dependencies}}) {
-            if ( $self->meta->{ $dep }{'checkout'} ) {
+            if ( $self->source( $dep )->cloned ) {
                 push @otherlibs, @{ $self->meta->{ $dep }{'libs'} };
                 next;
             }
 
             print "processing dependency $dep\n";
-            my @deplibs = $self->_checkout_project($self->config->{$dep}, 'HEAD');
+            my $config = $self->config->{ $dep };
+            $self->_clone_project( $config );
+            my @deplibs = $self->_checkout_project( $config );
             if (@deplibs) {
                 push @otherlibs, @deplibs;
             } else {
