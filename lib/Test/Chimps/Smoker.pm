@@ -66,52 +66,52 @@ file.
 use base qw/Class::Accessor/;
 __PACKAGE__->mk_ro_accessors(qw/server config_file simulate/);
 __PACKAGE__->mk_accessors(
-  qw/_env_stack meta config projects iterations/);
+    qw/_env_stack meta config projects iterations/);
 
 # add a signal handler so destructor gets run
 $SIG{INT} = sub {print "caught sigint.  cleaning up...\n"; exit(1)};
 $ENV{PERL5LIB} = "" unless defined $ENV{PERL5LIB}; # Warnings avoidance
 
 sub new {
-  my $class = shift;
-  my $obj = bless {}, $class;
-  $obj->_init(@_);
-  return $obj;
+    my $class = shift;
+    my $obj = bless {}, $class;
+    $obj->_init(@_);
+    return $obj;
 }
 
 sub _init {
-  my $self = shift;
-  my %args = validate_with(
-    params => \@_,
-    spec   => {
-      server      => 1,
-      config_file => 1,
-      simulate    => 0,
-      iterations  => {
-        optional => 1,
-        default  => 'inf'
-      },
-      projects => {
-        optional => 1,
-        default  => 'all'
-      },
-      jobs => {
-        optional => 1,
-        type     => SCALAR,
-        regex    => qr/^\d+$/,
-        default  => 1,
-      },
-    },
-    called => 'The Test::Chimps::Smoker constructor'
-  );
+    my $self = shift;
+    my %args = validate_with(
+        params => \@_,
+        spec   => {
+            server      => 1,
+            config_file => 1,
+            simulate    => 0,
+            iterations  => {
+                optional => 1,
+                default  => 'inf'
+              },
+            projects => {
+                optional => 1,
+                default  => 'all'
+              },
+            jobs => {
+                optional => 1,
+                type     => SCALAR,
+                regex    => qr/^\d+$/,
+                default  => 1,
+              },
+          },
+        called => 'The Test::Chimps::Smoker constructor'
+      );
 
-  foreach my $key (keys %args) {
-    $self->{$key} = $args{$key};
-  }
-  $self->_env_stack([]);
-  $self->meta({});
+    foreach my $key (keys %args) {
+        $self->{$key} = $args{$key};
+    }
+    $self->_env_stack([]);
+    $self->meta({});
 
-  $self->load_config;
+    $self->load_config;
 }
 
 sub load_config {
@@ -136,95 +136,97 @@ sub DESTROY {
 }
 
 sub _smoke_once {
-  my $self = shift;
-  my $project = shift;
-  my $config = $self->config;
+    my $self = shift;
+    my $project = shift;
+    my $config = $self->config;
 
-  return 1 if $config->{$project}->{dependency_only};
+    return 1 if $config->{$project}->{dependency_only};
 
-  my $info_out = `svn info $config->{$project}->{svn_uri}`;
-  $info_out =~ m/^Revision: (\d+)/m;
-  my $latest_revision = $1;
-  $info_out =~ m/^Last Changed Rev: (\d+)/m;
-  my $last_changed_revision = $1;
+    my $info_out = `svn info $config->{$project}->{svn_uri}`;
+    $info_out =~ m/^Revision: (\d+)/m;
+    my $latest_revision = $1;
+    $info_out =~ m/^Last Changed Rev: (\d+)/m;
+    my $last_changed_revision = $1;
 
-  my $old_revision = $config->{$project}->{revision};
+    my $old_revision = $config->{$project}->{revision};
 
-  return 0 unless $last_changed_revision > $old_revision;
+    return 0 unless $last_changed_revision > $old_revision;
 
-  my @revisions = (($old_revision + 1) .. $latest_revision);
-  my $revision;
-  while (@revisions) {
-    $revision = shift @revisions;
-    # only actually do the check out if the revision and last changed revision match for
-    # a particular revision
-    last if _change_on_revision($config->{$project}->{svn_uri}, $revision);
-  }
+    my @revisions = (($old_revision + 1) .. $latest_revision);
+    my $revision;
+    while (@revisions) {
+        $revision = shift @revisions;
 
-  $info_out = `svn info -r $revision $config->{$project}->{svn_uri}`;
-  $info_out =~ m/^Last Changed Author: (\w+)/m;
-  my $committer = $1;
+# only actually do the check out if the revision and last changed revision match for
+# a particular revision
+        last if _change_on_revision($config->{$project}->{svn_uri}, $revision);
+    }
 
-  my @libs = $self->_checkout_project($config->{$project}, $revision);
-  unless (@libs) {
-    print "Skipping report report for $project revision $revision due to build failure\n";
-    $self->update_revision( $project => $revision );
-    return 0;
-  }
-  my @dbs = $self->_list_dbs;
+    $info_out = `svn info -r $revision $config->{$project}->{svn_uri}`;
+    $info_out =~ m/^Last Changed Author: (\w+)/m;
+    my $committer = $1;
 
-  print "running tests for $project\n";
-  my $test_glob = $config->{$project}->{test_glob} || 't/*.t t/*/t/*.t';
-  my $tmpfile = File::Temp->new( SUFFIX => ".tar.gz" );
-  my $harness = TAP::Harness::Archive->new( {
-      archive          => $tmpfile,
-      extra_properties => {
-          project   => $project,
-          revision  => $revision,
-          committer => $committer,
-          osname    => $Config{osname},
-          osvers    => $Config{osvers},
-          archname  => $Config{archname},
-      },
-      jobs => ($config->{$project}{jobs} || $self->{jobs}),
-      lib => \@libs,
-  } );
-  {
-      # Runtests apparently grows PERL5LIB -- local it so it doesn't
-      # grow without bound
-      local $ENV{PERL5LIB} = $ENV{PERL5LIB};
-      $harness->runtests(glob($test_glob));
-  }
+    my @libs = $self->_checkout_project($config->{$project}, $revision);
+    unless (@libs) {
+        print "Skipping report report for $project revision $revision due to build failure\n";
+        $self->update_revision( $project => $revision );
+        return 0;
+    }
+    my @dbs = $self->_list_dbs;
 
-  $self->_unroll_env_stack;
+    print "running tests for $project\n";
+    my $test_glob = $config->{$project}->{test_glob} || 't/*.t t/*/t/*.t';
+    my $tmpfile = File::Temp->new( SUFFIX => ".tar.gz" );
+    my $harness = TAP::Harness::Archive->new( {
+            archive          => $tmpfile,
+            extra_properties => {
+                project   => $project,
+                revision  => $revision,
+                committer => $committer,
+                osname    => $Config{osname},
+                osvers    => $Config{osvers},
+                archname  => $Config{archname},
+              },
+            jobs => ($config->{$project}{jobs} || $self->{jobs}),
+            lib => \@libs,
+        } );
+    {
 
-  chdir(File::Spec->rootdir);
+        # Runtests apparently grows PERL5LIB -- local it so it doesn't
+        # grow without bound
+        local $ENV{PERL5LIB} = $ENV{PERL5LIB};
+        $harness->runtests(glob($test_glob));
+    }
 
-  $self->remove_checkouts;
+    $self->_unroll_env_stack;
 
-  $self->_clean_dbs(@dbs);
+    chdir(File::Spec->rootdir);
 
-  my $client = Test::Chimps::Client->new(
-    archive => $tmpfile,
-    server => $self->server
-  );
+    $self->remove_checkouts;
 
-  my ($status, $msg);
-  if ($self->simulate) {
-    $status = 1;
-  } else {
-    print "Sending smoke report for @{[$self->server]}\n";
-    ($status, $msg) = $client->send;
-  }
+    $self->_clean_dbs(@dbs);
 
-  if ($status) {
-    print "Sumbitted smoke report for $project revision $revision\n";
-    $self->update_revision( $project => $revision );
-    return 1;
-  } else {
-    print "Error: the server responded: $msg\n";
-    return 0;
-  }
+    my $client = Test::Chimps::Client->new(
+        archive => $tmpfile,
+        server => $self->server
+      );
+
+    my ($status, $msg);
+    if ($self->simulate) {
+        $status = 1;
+    } else {
+        print "Sending smoke report for @{[$self->server]}\n";
+        ($status, $msg) = $client->send;
+    }
+
+    if ($status) {
+        print "Sumbitted smoke report for $project revision $revision\n";
+        $self->update_revision( $project => $revision );
+        return 1;
+    } else {
+        print "Error: the server responded: $msg\n";
+        return 0;
+    }
 }
 
 sub remove_checkouts {
@@ -238,32 +240,32 @@ sub remove_checkouts {
 }
 
 sub _smoke_n_times {
-  my $self = shift;
-  my $n = shift;
-  my $projects = shift;
+    my $self = shift;
+    my $n = shift;
+    my $projects = shift;
 
-  if ($n <= 0) {
-    die "Can not smoke projects a negative number of times";
-  } elsif ($n eq 'inf') {
-    while (1) {
-      $self->_smoke_projects($projects);
-      sleep 60;
+    if ($n <= 0) {
+        die "Can not smoke projects a negative number of times";
+    } elsif ($n eq 'inf') {
+        while (1) {
+            $self->_smoke_projects($projects);
+            sleep 60;
+        }
+    } else {
+        for (my $i = 0; $i < $n;) {
+            $i++ if $self->_smoke_projects($projects);
+            sleep 60;
+        }
     }
-  } else {
-    for (my $i = 0; $i < $n;) {
-      $i++ if $self->_smoke_projects($projects);
-      sleep 60;
-    }
-  }
 }
 
 sub _smoke_projects {
-  my $self = shift;
-  my $projects = shift;
+    my $self = shift;
+    my $projects = shift;
 
-  foreach my $project (@$projects) {
-    $self->_smoke_once($project);
-  }
+    foreach my $project (@$projects) {
+        $self->_smoke_once($project);
+    }
 }
 
 =head2 smoke PARAMS
@@ -294,181 +296,182 @@ projects will be smoked.  Defaults to 'all'.
 =cut
 
 sub smoke {
-  my $self = shift;
-  my $config = $self->config;
+    my $self = shift;
+    my $config = $self->config;
 
-  my %args = validate_with(
-    params => \@_,
-    spec   => {
-      iterations => {
-        optional => 1,
-        type     => SCALAR,
-        regex    => qr/^(inf|\d+)$/,
-        default  => 'inf'
-      },
-      projects => {
-        optional => 1,
-        type     => ARRAYREF | SCALAR,
-        default  => 'all'
-      }
-    },
-    called => 'Test::Chimps::Smoker->smoke'
-  );
+    my %args = validate_with(
+        params => \@_,
+        spec   => {
+            iterations => {
+                optional => 1,
+                type     => SCALAR,
+                regex    => qr/^(inf|\d+)$/,
+                default  => 'inf'
+              },
+            projects => {
+                optional => 1,
+                type     => ARRAYREF | SCALAR,
+                default  => 'all'
+              }
+          },
+        called => 'Test::Chimps::Smoker->smoke'
+      );
 
-  my $projects = $args{projects};
-  my $iterations = $args{iterations};
-  $self->_validate_projects_opt($projects);
+    my $projects = $args{projects};
+    my $iterations = $args{iterations};
+    $self->_validate_projects_opt($projects);
 
-  if ($projects eq 'all') {
-    $projects = [keys %$config];
-  }
+    if ($projects eq 'all') {
+        $projects = [keys %$config];
+    }
 
-  $self->_smoke_n_times($iterations, $projects);
+    $self->_smoke_n_times($iterations, $projects);
 
 }
 
 sub _validate_projects_opt {
-  my ($self, $projects) = @_;
-  return if $projects eq 'all';
+    my ($self, $projects) = @_;
+    return if $projects eq 'all';
 
-  foreach my $project (@$projects) {
-    die "no such project: '$project'"
-      unless exists $self->config->{$project};
-  }
+    foreach my $project (@$projects) {
+        die "no such project: '$project'"
+          unless exists $self->config->{$project};
+    }
 }
 
 sub _checkout_project {
-  my $self = shift;
-  my $project = shift;
-  my $revision = shift;
+    my $self = shift;
+    my $project = shift;
+    my $revision = shift;
 
-  my $tmpdir = tempdir("chimps-svn-XXXXXXX", TMPDIR => 1);
-  $self->meta->{ $project->{'name'} }{'checkout'} = $tmpdir;
+    my $tmpdir = tempdir("chimps-svn-XXXXXXX", TMPDIR => 1);
+    $self->meta->{ $project->{'name'} }{'checkout'} = $tmpdir;
 
-  system("svn", "co", "-r", $revision, $project->{svn_uri}, $tmpdir);
+    system("svn", "co", "-r", $revision, $project->{svn_uri}, $tmpdir);
 
-  my $projectdir = $self->meta->{ $project->{'name'} }{'root'}
-    = File::Spec->catdir($tmpdir, $project->{root_dir});
+    my $projectdir = $self->meta->{ $project->{'name'} }{'root'}
+      = File::Spec->catdir($tmpdir, $project->{root_dir});
 
-  my @libs = map File::Spec->catdir($projectdir, $_),
-    'blib/lib', @{ $project->{libs} || [] };
-  $self->meta->{ $project->{'name'} }{'libs'} = [@libs];
+    my @libs = map File::Spec->catdir($projectdir, $_),
+      'blib/lib', @{ $project->{libs} || [] };
+    $self->meta->{ $project->{'name'} }{'libs'} = [@libs];
 
-  $self->_push_onto_env_stack($project->{env}, 'CHIMPS_'. uc($project->{'name'}) .'_ROOT' => $projectdir);
+    $self->_push_onto_env_stack($project->{env}, 'CHIMPS_'. uc($project->{'name'}) .'_ROOT' => $projectdir);
 
-  my @otherlibs;
-  if (defined $project->{dependencies}) {
-    foreach my $dep (@{$project->{dependencies}}) {
-      if ( $self->meta->{ $dep }{'checkout'} ) {
-          push @otherlibs, @{ $self->meta->{ $dep }{'libs'} };
-          next;
-      }
+    my @otherlibs;
+    if (defined $project->{dependencies}) {
+        foreach my $dep (@{$project->{dependencies}}) {
+            if ( $self->meta->{ $dep }{'checkout'} ) {
+                push @otherlibs, @{ $self->meta->{ $dep }{'libs'} };
+                next;
+            }
 
-      print "processing dependency $dep\n";
-      my @deplibs = $self->_checkout_project($self->config->{$dep}, 'HEAD');
-      if (@deplibs) {
-          push @otherlibs, @deplibs;
-      } else {
-          print "Dependency $dep failed; aborting";
-          return ();
-      }
+            print "processing dependency $dep\n";
+            my @deplibs = $self->_checkout_project($self->config->{$dep}, 'HEAD');
+            if (@deplibs) {
+                push @otherlibs, @deplibs;
+            } else {
+                print "Dependency $dep failed; aborting";
+                return ();
+            }
+        }
     }
-  }
 
-  my %seen;
-  @libs = grep {not $seen{$_}++} @libs, @otherlibs;
+    my %seen;
+    @libs = grep {not $seen{$_}++} @libs, @otherlibs;
 
-  unless (chdir($projectdir)) {
-      print "chdir to $projectdir failed -- check value of root_dir?\n";
-      return ();
-  }
+    unless (chdir($projectdir)) {
+        print "chdir to $projectdir failed -- check value of root_dir?\n";
+        return ();
+    }
 
-  local $ENV{PERL5LIB} = join(":",@libs,$ENV{PERL5LIB});
+    local $ENV{PERL5LIB} = join(":",@libs,$ENV{PERL5LIB});
 
-  if (defined $project->{configure_cmd}) {
-      my $ret = system($project->{configure_cmd});
-      if ($ret) {
-          print "Return value of @{[$project->{configure_cmd}]} from $projectdir = $ret\n"
-            if $ret;
-          return ();
-      }
-  }
+    if (defined $project->{configure_cmd}) {
+        my $ret = system($project->{configure_cmd});
+        if ($ret) {
+            print "Return value of @{[$project->{configure_cmd}]} from $projectdir = $ret\n"
+              if $ret;
+            return ();
+        }
+    }
 
-  return @libs;
+    return @libs;
 }
 
 sub _list_dbs {
     local $ENV{DBI_USER} = "postgres";
     return map {s/.*dbname=(.*)/$1/ ? $_ : () }
-        DBI->data_sources("Pg");
+      DBI->data_sources("Pg");
 }
 
 sub _clean_dbs {
     my %skip = map {($_ => 1)} @_;
 
     local $ENV{DBI_USER} = "postgres";
-    my @dbs = grep {not $skip{$_}} 
-              _list_dbs();
+    my @dbs = grep {not $skip{$_}}
+      _list_dbs();
 
     my $dbh = DBI->connect("dbi:Pg:dbname=template1","postgres","",{RaiseError => 1});
     $dbh->do("DROP DATABASE $_") for @dbs;
 }
 
 sub _remove_tmpdir {
-  my $tmpdir = shift;
-  print "removing temporary directory $tmpdir\n";
-  rmtree($tmpdir, 0, 0);
+    my $tmpdir = shift;
+    print "removing temporary directory $tmpdir\n";
+    rmtree($tmpdir, 0, 0);
 }
 
 sub _change_on_revision {
-  my $uri = shift;
-  my $revision = shift;
+    my $uri = shift;
+    my $revision = shift;
 
-  my $info_out = `svn info -r $revision $uri`;
-  $info_out =~ m/^Revision: (\d+)/m;
-  my $latest_revision = $1;
-  $info_out =~ m/^Last Changed Rev: (\d+)/m;
-  my $last_changed_revision = $1;
+    my $info_out = `svn info -r $revision $uri`;
+    $info_out =~ m/^Revision: (\d+)/m;
+    my $latest_revision = $1;
+    $info_out =~ m/^Last Changed Rev: (\d+)/m;
+    my $last_changed_revision = $1;
 
-  return $latest_revision == $last_changed_revision;
+    return $latest_revision == $last_changed_revision;
 }
 
 sub _push_onto_env_stack {
-  my $self = shift;
-  my $vars = shift;
+    my $self = shift;
+    my $vars = shift;
 
-  my $frame = {};
-  foreach my $var (keys %$vars) {
-    if (exists $ENV{$var}) {
-      $frame->{$var} = $ENV{$var};
-    } else {
-      $frame->{$var} = undef;
+    my $frame = {};
+    foreach my $var (keys %$vars) {
+        if (exists $ENV{$var}) {
+            $frame->{$var} = $ENV{$var};
+        } else {
+            $frame->{$var} = undef;
+        }
+        my $value = $vars->{$var};
+
+        # old value substitution
+        $value =~ s/\$$var/$ENV{$var}/g;
+
+        print "setting environment variable $var to $value\n";
+        $ENV{$var} = $value;
     }
-    my $value = $vars->{$var};
-    # old value substitution
-    $value =~ s/\$$var/$ENV{$var}/g;
-
-    print "setting environment variable $var to $value\n";
-    $ENV{$var} = $value;
-  }
-  push @{$self->_env_stack}, $frame;
+    push @{$self->_env_stack}, $frame;
 }
 
 sub _unroll_env_stack {
-  my $self = shift;
+    my $self = shift;
 
-  while (scalar @{$self->_env_stack}) {
-    my $frame = pop @{$self->_env_stack};
-    foreach my $var (keys %$frame) {
-      if (defined $frame->{$var}) {
-        print "reverting environment variable $var to $frame->{$var}\n";
-        $ENV{$var} = $frame->{$var};
-      } else {
-        print "unsetting environment variable $var\n";
-        delete $ENV{$var};
-      }
+    while (scalar @{$self->_env_stack}) {
+        my $frame = pop @{$self->_env_stack};
+        foreach my $var (keys %$frame) {
+            if (defined $frame->{$var}) {
+                print "reverting environment variable $var to $frame->{$var}\n";
+                $ENV{$var} = $frame->{$var};
+            } else {
+                print "unsetting environment variable $var\n";
+                delete $ENV{$var};
+            }
+        }
     }
-  }
 }
 
 =head1 ACCESSORS
