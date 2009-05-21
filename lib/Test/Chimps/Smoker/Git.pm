@@ -25,13 +25,19 @@ sub committer {
     return $committer;
 }
 
+sub clone {
+    my $self = shift;
+
+    system( qw(git clone), $self->uri, $self->directory ) == 0
+        or die "couldn't clone ". $self->uri .": $!";
+
+    return 1;
+}
+
 sub checkout {
     my $self = shift;
     my %args = @_;
 
-    system( qw(git clone), $self->uri, $args{'directory'} )
-        or die "couldn't clone ". $self->uri .": $!";
-    chdir $args{'directory'};
     system qw(git checkout), $args{'revision'};
 }
 
