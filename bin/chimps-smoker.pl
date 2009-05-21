@@ -14,15 +14,17 @@ my $iterations = 'inf';
 my $projects = 'all';
 my $help = 0;
 my $jobs = 1;
+my $sleep = 60;
 
-GetOptions("server|s=s",      \$server,
-           "config_file|c=s", \$config_file,
-           "iterations|i=i",  \$iterations,
-           "projects|p=s",    \$projects,
-           "help|h",          \$help,
-           "jobs|j=i",        \$jobs)
-  || pod2usage(-exitval => 2,
-               -verbose => 1);
+GetOptions(
+    "server|s=s",      \$server,
+    "config_file|c=s", \$config_file,
+    "iterations|i=i",  \$iterations,
+    "projects|p=s",    \$projects,
+    "help|h",          \$help,
+    "jobs|j=i",        \$jobs,
+    "sleep=i",         \$sleep,
+) || pod2usage(-exitval => 2, -verbose => 1);
 
 
 if ($help) {
@@ -31,14 +33,8 @@ if ($help) {
             -noperldoc => 1);
 }
 
-if (! defined $server) {
-  print "You must specify a server to upload results to\n";
-  exit 2;
-}
-
-if (! defined $server) {
-  print "You must specify a configuration file\n";
-  exit 2;
+unless ( defined $server ) {
+  print "No server specified, simulation mode enabled\n";
 }
 
 if ($projects ne 'all') {
@@ -49,11 +45,13 @@ my $poller = Test::Chimps::Smoker->new(
   server      => $server,
   config_file => $config_file,
   jobs        => $jobs,
+  sleep       => $sleep,
 );
 
-$poller->smoke(iterations => $iterations,
-               projects => $projects,
-           );
+$poller->smoke(
+  iterations => $iterations,
+  projects => $projects,
+);
   
 __DATA__
 
@@ -64,7 +62,8 @@ chimps-smoker.pl - continually smoke projects
 =head1 SYNOPSIS
 
 chimps-smoker.pl --server SERVER --config_file CONFIG_FILE
-    [--iterations N] [--projects PROJECT1,PROJECT2,... ] [--jobs n]
+    [--iterations N] [--projects PROJECT1,PROJECT2,... ] [--jobs N]
+    [--sleep N]
 
 This program is a wrapper around Test::Chimps::Smoker, which allows
 you to specify common options on the command line.
@@ -78,7 +77,8 @@ about the configuration file format, see L<Test::Chimps::Smoker>.
 
 =head2 --server, -s
 
-Specifies the full path to the chimps server CGI.
+Specifies the full path to the chimps server CGI. Reports are not sent
+anywhere if it's not provided.
 
 =head1 OPTIONS
 
@@ -96,6 +96,11 @@ is provided, all projects will be smoked.  Defaults to 'all'.
 =head2 --jobs, -j
 
 The number of parallel processes to use when running tests.
+
+=head2 --sleep
+
+The number of seconds smoker should sleep between checks for updates.
+Defaults to 60 seconds.
 
 =head1 AUTHOR
 
