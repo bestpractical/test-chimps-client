@@ -4,7 +4,8 @@ use strict;
 use warnings;
 use base qw/Class::Accessor/;
 
-__PACKAGE__->mk_ro_accessors(qw/config/);
+__PACKAGE__->mk_ro_accessors(qw/config smoker/);
+__PACKAGE__->mk_accessors(qw/directory cloned/);
 
 sub new {
     my $proto = shift;
@@ -21,5 +22,11 @@ sub new {
 }
 
 sub _init { return $_[0] }
+
+sub clone { return 1 }
+sub checkout { return 1 }
+sub clean { return 1 }
+
+sub next { return () }
 
 1;
