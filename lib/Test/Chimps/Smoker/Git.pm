@@ -10,7 +10,7 @@ sub revision_after {
     my $revision = shift;
 
     my $cmd = "git log --reverse $revision..origin";
-    my ($next)  = (`$cmd` =~ m/^commit\s+([a-f0-9])/im);
+    my ($next)  = (`$cmd` =~ m/^commit\s+([a-f0-9]+)$/im);
 
     return $next;
 }
