@@ -241,10 +241,12 @@ sub remove_checkouts {
     my $self = shift;
 
     my $meta = $self->meta;
-    foreach my $tmpdir (grep length && defined, map $_->{'checkout'}, values %$meta ) {
-        _remove_tmpdir($tmpdir);
+    foreach my $source ( grep $_, map $_->{'source'}, values %$meta ) {
+        next unless my $dir = $source->directory;
+
+        _remove_tmpdir($dir);
+        $source->directory(undef);
     }
-    delete @{$_}{'checkout'} foreach values %$meta;
 }
 
 sub _smoke_n_times {
@@ -334,7 +336,6 @@ sub smoke {
     }
 
     $self->_smoke_n_times($iterations, $projects);
-
 }
 
 sub _validate_projects_opt {
@@ -352,15 +353,12 @@ sub _checkout_project {
     my $project = shift;
     my $revision = shift;
 
-    my $tmpdir = tempdir("chimps-svn-XXXXXXX", TMPDIR => 1);
-    $self->meta->{ $project->{'name'} }{'checkout'} = $tmpdir;
+    my $source = $self->source( $project->{'name'} );
+    $source->checkout( revision => $revision );
 
-    my $source = $self->source( $project->{'name'} )->checkout(
-        revision => $revision, directory => $tmpdir
-    );
-
+    my $tmpdir = $source->directory;
     my $projectdir = $self->meta->{ $project->{'name'} }{'root'}
-      = File::Spec->catdir($tmpdir, $project->{root_dir});
+        = File::Spec->catdir($tmpdir, $project->{root_dir});
 
     my @libs = map File::Spec->catdir($projectdir, $_),
       'blib/lib', @{ $project->{libs} || [] };
