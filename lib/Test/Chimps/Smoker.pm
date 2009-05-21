@@ -443,8 +443,9 @@ sub _checkout_project {
 
 sub _list_dbs {
     local $ENV{DBI_USER} = "postgres";
+    local $@;
     return map {s/.*dbname=(.*)/$1/ ? $_ : () }
-      DBI->data_sources("Pg");
+      eval { DBI->data_sources("Pg") };
 }
 
 sub _clean_dbs {
@@ -453,6 +454,7 @@ sub _clean_dbs {
     local $ENV{DBI_USER} = "postgres";
     my @dbs = grep {not $skip{$_}}
       _list_dbs();
+    return unless @dbs;
 
     my $dbh = DBI->connect("dbi:Pg:dbname=template1","postgres","",{RaiseError => 1});
     $dbh->do("DROP DATABASE $_") for @dbs;
