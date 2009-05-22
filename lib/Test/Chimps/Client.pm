@@ -54,8 +54,10 @@ To install this module, run the following commands:
 
 Chimps is the Collaborative Heterogeneous Infinite Monkey
 Perfectionification Service.  It is a framework for storing,
-viewing, generating, and uploading smoke reports.  This
-distribution provides client-side modules and binaries for Chimps.
+viewing, generating, and uploading smoke reports.
+
+This distribution provides client-side modules and binaries
+for Chimps.
 
 =head1 METHODS
 
@@ -210,7 +212,7 @@ Pugs distribution.
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2006 Best Practical Solutions.
+Copyright 2006-2009 Best Practical Solutions.
 Portions copyright 2005-2006 the Pugs project.
 
 This program is free software; you can redistribute it and/or modify it
