@@ -17,30 +17,43 @@ use DBI;
 
 =head1 NAME
 
-Test::Chimps::Smoker - Poll a set of SVN repositories and run tests when they change
+Test::Chimps::Smoker - Poll a set of repositories and run tests when they change
 
 =head1 SYNOPSIS
 
-This module gives you everything you need to make your own build
-slave.  You give it a configuration file describing all of your
-projects and how to test them, and it will monitor the SVN
-repositories, check the projects out (and their dependencies), test
-them, and submit the report to a server.
+    # command line tool
+    chimps-smoker.pl \
+        -c /path/to/configfile.yml \
+        -s http://www.example.com/cgi-bin/chimps-server.pl
 
+    # API
     use Test::Chimps::Smoker;
 
     my $poller = Test::Chimps::Smoker->new(
-      server      => 'http://www.example.com/cgi-bin/chimps-server.pl',
-      config_file => '/path/to/configfile.yml'
+        server      => 'http://www.example.com/cgi-bin/chimps-server.pl',
+        config_file => '/path/to/configfile.yml',
+    );
 
+    $poller->smoke;
 
-    $poller->poll();
+=head1 DESCRIPTION
+
+Chimps is the Collaborative Heterogeneous Infinite Monkey
+Perfectionification Service.  It is a framework for storing,
+viewing, generating, and uploading smoke reports.  This
+distribution provides client-side modules and binaries for Chimps.
+
+This module gives you everything you need to make your own build
+slave.  You give it a configuration file describing all of your
+projects and how to test them, and it will monitor the repositories,
+check the projects out (and their dependencies), test them, and submit
+the report to a server.
 
 =head1 METHODS
 
 =head2 new ARGS
 
-Creates a new Client object.  ARGS is a hash whose valid keys are:
+Creates a new smoker object.  ARGS is a hash whose valid keys are:
 
 =over 4
 
@@ -48,15 +61,21 @@ Creates a new Client object.  ARGS is a hash whose valid keys are:
 
 Mandatory.  The configuration file describing which repositories to
 monitor.  The format of the configuration is described in
-L</"CONFIGURATION FILE">.
+L</"CONFIGURATION FILE">. File is update after each run.
 
 =item * server
 
-Mandatory.  The URI of the server script to upload the reports to.
+Optional.  The URI of the server script to upload the reports to.
+Defaults to simulation mode when reports are sent.
+
+=item * sleep
+
+Optional.  Number of seconds to sleep between repository checks.
+Defaults to 60 seconds.
 
 =item * simulate [DEPRECATED]
 
-[DEPRECATED] Just don't provide server to send files to.
+[DEPRECATED] Just don't provide server option to enable simulation.
 
 Don't actually submit the smoke reports, just run the tests.  This
 I<does>, however, increment the revision numbers in the config
@@ -130,52 +149,103 @@ sub _init {
     $self->load_config;
 }
 
-sub load_config {
+=head2 smoke PARAMS
+
+Calling smoke will cause the C<Smoker> object to continually poll
+repositories for changes in revision numbers.  If an (actual)
+change is detected, the repository will be checked out (with
+dependencies), built, and tested, and the resulting report will be
+submitted to the server.  This method may not return.  Valid
+options to smoke are:
+
+=over 4
+
+=item * iterations
+
+Specifies the number of iterations to run.  This is the number of
+smoke reports to generate per project.  A value of 'inf' means to
+continue smoking forever.  Defaults to 'inf'.
+
+=item * projects
+
+An array reference specifying which projects to smoke.  If the
+string 'all' is provided instead of an array reference, all
+projects will be smoked.  Defaults to 'all'.
+
+=back
+
+=cut
+
+sub smoke {
     my $self = shift;
+    my $config = $self->config;
 
-    my $cfg = $self->config(LoadFile($self->config_file));
+    my %args = validate_with(
+        params => \@_,
+        spec   => {
+            iterations => {
+                optional => 1,
+                type     => SCALAR,
+                regex    => qr/^(inf|\d+)$/,
+                default  => 'inf'
+              },
+            projects => {
+                optional => 1,
+                type     => ARRAYREF | SCALAR,
+                default  => 'all'
+              }
+          },
+        called => 'Test::Chimps::Smoker->smoke'
+      );
 
-    # update old style config file
-    {
-        my $found_old_style = 0;
-        foreach ( grep $_->{svn_uri}, values %$cfg ) {
-            $found_old_style = 1;
+    my $projects = $args{projects};
+    my $iterations = $args{iterations};
+    $self->_validate_projects_opt($projects);
 
-            $_->{'repository'} = {
-                type => 'SVN',
-                uri  => delete $_->{svn_uri},
-            };
-        }
-        DumpFile($self->config_file, $cfg) if $found_old_style;
+    if ($projects eq 'all') {
+        $projects = [keys %$config];
     }
-    
-    # store project name in its hash
-    $cfg->{$_}->{'name'} = $_ foreach keys %$cfg;
+
+    $self->_smoke_n_times($iterations, $projects);
 }
 
-sub update_revision_in_config {
-    my $self = shift;
-    my ($project, $revision) = @_;
+sub _validate_projects_opt {
+    my ($self, $projects) = @_;
+    return if $projects eq 'all';
 
-    my $tmp = LoadFile($self->config_file);
-    $tmp->{$project}->{revision} = $self->config->{$project}->{revision} = $revision;
-    DumpFile($self->config_file, $tmp);
+    foreach my $project (@$projects) {
+        die "no such project: '$project'"
+          unless exists $self->config->{$project};
+    }
 }
 
-sub DESTROY {
+sub _smoke_n_times {
     my $self = shift;
-    $self->remove_checkouts;
+    my $n = shift;
+    my $projects = shift;
+
+    if ($n <= 0) {
+        die "Can not smoke projects a negative number of times";
+    } elsif ($n eq 'inf') {
+        while (1) {
+            $self->_smoke_projects($projects);
+            CORE::sleep $self->sleep if $self->sleep;
+        }
+    } else {
+        for (my $i = 0; $i < $n;) {
+            $i++ if $self->_smoke_projects($projects);
+            CORE::sleep $self->sleep if $self->sleep;
+        }
+    }
 }
 
-sub source {
+sub _smoke_projects {
     my $self = shift;
-    my $project = shift;
-    $self->meta->{$project}{'source'} ||= Test::Chimps::Smoker::Source->new(
-            %{ $self->config->{$project}{'repository'} },
-            config => $self->config->{$project},
-            smoker => $self,
-        );
-    return $self->meta->{$project}{'source'};
+    my $projects = shift;
+
+    foreach my $project (@$projects) {
+        $self->_smoke_once($project);
+    }
 }
 
 sub _smoke_once {
@@ -251,116 +321,47 @@ sub _smoke_once {
     return 1;
 }
 
-sub remove_checkouts {
+sub load_config {
     my $self = shift;
 
-    my $meta = $self->meta;
-    foreach my $source ( grep $_, map $_->{'source'}, values %$meta ) {
-        next unless my $dir = $source->directory;
+    my $cfg = $self->config(LoadFile($self->config_file));
 
-        _remove_tmpdir($dir);
-        $source->directory(undef);
-        $source->cloned(0);
-    }
-}
+    # update old style config file
+    {
+        my $found_old_style = 0;
+        foreach ( grep $_->{svn_uri}, values %$cfg ) {
+            $found_old_style = 1;
 
-sub _smoke_n_times {
-    my $self = shift;
-    my $n = shift;
-    my $projects = shift;
-
-    if ($n <= 0) {
-        die "Can not smoke projects a negative number of times";
-    } elsif ($n eq 'inf') {
-        while (1) {
-            $self->_smoke_projects($projects);
-            CORE::sleep $self->sleep if $self->sleep;
+            $_->{'repository'} = {
+                type => 'SVN',
+                uri  => delete $_->{svn_uri},
+            };
         }
-    } else {
-        for (my $i = 0; $i < $n;) {
-            $i++ if $self->_smoke_projects($projects);
-            CORE::sleep $self->sleep if $self->sleep;
-        }
+        DumpFile($self->config_file, $cfg) if $found_old_style;
     }
+    
+    # store project name in its hash
+    $cfg->{$_}->{'name'} = $_ foreach keys %$cfg;
 }
 
-sub _smoke_projects {
+sub update_revision_in_config {
     my $self = shift;
-    my $projects = shift;
+    my ($project, $revision) = @_;
 
-    foreach my $project (@$projects) {
-        $self->_smoke_once($project);
-    }
+    my $tmp = LoadFile($self->config_file);
+    $tmp->{$project}->{revision} = $self->config->{$project}->{revision} = $revision;
+    DumpFile($self->config_file, $tmp);
 }
 
-=head2 smoke PARAMS
-
-Calling smoke will cause the C<Smoker> object to continually poll
-repositories for changes in revision numbers.  If an (actual)
-change is detected, the repository will be checked out (with
-dependencies), built, and tested, and the resulting report will be
-submitted to the server.  This method may not return.  Valid
-options to smoke are:
-
-=over 4
-
-=item * iterations
-
-Specifies the number of iterations to run.  This is the number of
-smoke reports to generate per project.  A value of 'inf' means to
-continue smoking forever.  Defaults to 'inf'.
-
-=item * projects
-
-An array reference specifying which projects to smoke.  If the
-string 'all' is provided instead of an array reference, all
-projects will be smoked.  Defaults to 'all'.
-
-=back
-
-=cut
-
-sub smoke {
+sub source {
     my $self = shift;
-    my $config = $self->config;
-
-    my %args = validate_with(
-        params => \@_,
-        spec   => {
-            iterations => {
-                optional => 1,
-                type     => SCALAR,
-                regex    => qr/^(inf|\d+)$/,
-                default  => 'inf'
-              },
-            projects => {
-                optional => 1,
-                type     => ARRAYREF | SCALAR,
-                default  => 'all'
-              }
-          },
-        called => 'Test::Chimps::Smoker->smoke'
-      );
-
-    my $projects = $args{projects};
-    my $iterations = $args{iterations};
-    $self->_validate_projects_opt($projects);
-
-    if ($projects eq 'all') {
-        $projects = [keys %$config];
-    }
-
-    $self->_smoke_n_times($iterations, $projects);
-}
-
-sub _validate_projects_opt {
-    my ($self, $projects) = @_;
-    return if $projects eq 'all';
-
-    foreach my $project (@$projects) {
-        die "no such project: '$project'"
-          unless exists $self->config->{$project};
-    }
+    my $project = shift;
+    $self->meta->{$project}{'source'} ||= Test::Chimps::Smoker::Source->new(
+            %{ $self->config->{$project}{'repository'} },
+            config => $self->config->{$project},
+            smoker => $self,
+        );
+    return $self->meta->{$project}{'source'};
 }
 
 sub _clone_project {
@@ -476,12 +477,6 @@ sub _clean_dbs {
     $dbh->do("DROP DATABASE $_") for @dbs;
 }
 
-sub _remove_tmpdir {
-    my $tmpdir = shift;
-    print "removing temporary directory $tmpdir\n";
-    rmtree($tmpdir, 0, 0);
-}
-
 sub _push_onto_env_stack {
     my $self = shift;
     my $vars = shift;
@@ -521,9 +516,33 @@ sub _unroll_env_stack {
     }
 }
 
+sub DESTROY {
+    my $self = shift;
+    $self->remove_checkouts;
+}
+
+sub remove_checkouts {
+    my $self = shift;
+
+    my $meta = $self->meta;
+    foreach my $source ( grep $_, map $_->{'source'}, values %$meta ) {
+        next unless my $dir = $source->directory;
+
+        _remove_tmpdir($dir);
+        $source->directory(undef);
+        $source->cloned(0);
+    }
+}
+
+sub _remove_tmpdir {
+    my $tmpdir = shift;
+    print "removing temporary directory $tmpdir\n";
+    rmtree($tmpdir, 0, 0);
+}
+
 =head1 ACCESSORS
 
-There are read-only accessors for server, config_file, and simulate.
+There are read-only accessors for server and config_file.
 
 =head1 CONFIGURATION FILE
 
@@ -542,7 +561,7 @@ look like this:
       revision: 555
       root_dir: trunk/foo
       repository:
-        type: svn
+        type: SVN
         uri: svn+ssh://svn.example.com/svn/foo
       test_glob: t/*.t t/*/*.t
     Jifty:
@@ -552,7 +571,7 @@ look like this:
       revision: 1332
       root_dir: trunk
       repository:
-        type: svn
+        type: SVN
         uri: svn+ssh://svn.jifty.org/svn/jifty.org/jifty
     Jifty-DBI:
       configure_cmd: perl Makefile.PL --skipdeps && make
@@ -565,7 +584,7 @@ look like this:
       revision: 1358
       root_dir: trunk
       repository:
-        type: svn
+        type: SVN
         uri: svn+ssh://svn.jifty.org/svn/jifty.org/Jifty-DBI
 
 The supported project options are as follows:
@@ -590,9 +609,12 @@ number is updated and the configuration file is re-written.
 The subdirectory inside the repository where configuration and
 testing commands should be run.
 
-=item * svn_uri
+=item * repository
 
-The subversion URI of the project.
+A hash describing repository of the project. Mandatory key is
+type which must match a source class name, for example SVN or
+Git. Another things is uri option, but a particular class
+may have more options.
 
 =item * env
 
@@ -601,6 +623,10 @@ configuration, and reverted to their previous values after the
 tests have been run.  In addition, if environment variable FOO's
 new value contains the string "$FOO", then the old value of FOO
 will be substituted in when setting the environment variable.
+
+Special environment variables are set in addition to described
+above. For each project CHIMPS_<project name>_ROOT is set pointing
+to the current checkout of the project.
 
 =item * dependencies
 
@@ -689,7 +715,7 @@ L<http://search.cpan.org/dist/Test-Chimps-Client>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2006 Best Practical Solutions.
+Copyright 2006-2009 Best Practical Solutions.
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
