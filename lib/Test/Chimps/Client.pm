@@ -1,27 +1,21 @@
 package Test::Chimps::Client;
 
+use 5.008;
 use warnings;
 use strict;
+
+our $VERSION = '0.11';
 
 use Carp;
 use Params::Validate qw/:all/;
 use HTTP::Request::Common;
 use LWP::UserAgent;
-use Storable qw/nfreeze/;
 
 use constant PROTO_VERSION => 1.0;
 
 =head1 NAME
 
 Test::Chimps::Client - Send smoke test results to a server
-
-=head1 VERSION
-
-Version 0.05
-
-=cut
-
-our $VERSION = '0.10';
 
 =head1 SYNOPSIS
 
@@ -39,14 +33,29 @@ This module simplifies the process of sending smoke test results
       server => 'http://www.example.com/cgi-bin/smoke-server.pl',
       model  => $model
     );
-    
+
     my ($status, $msg) = $client->send;
-    
+
     if (! $status) {
       print "Error: $msg\n";
       exit(1);
     }
 
+=head1 INSTALLATION
+
+To install this module, run the following commands:
+
+    perl Makefile.PL
+    make
+    make test
+    make install
+
+=head1 DESCRIPTION
+
+Chimps is the Collaborative Heterogeneous Infinite Monkey
+Perfectionification Service.  It is a framework for storing,
+viewing, generating, and uploading smoke reports.  This
+distribution provides client-side modules and binaries for Chimps.
 
 =head1 METHODS
 

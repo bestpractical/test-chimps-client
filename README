@@ -1,44 +1,116 @@
-Test-Chimps-Client
+NAME
+    Test::Chimps::Client - Send smoke test results to a server
 
-Chimps is the Collaborative Heterogeneous Infinite Monkey
-Perfectionification Service.  It is a framework for storing,
-viewing, generating, and uploading smoke reports.  This
-distribution provides client-side modules and binaries for Chimps.
+SYNOPSIS
+    This module simplifies the process of sending smoke test results (in the
+    form of "Test::TAP::Model"s) to a smoke server.
+
+        use Test::Chimps::Client;
+        use Test::TAP::Model::Visual;
+
+        chdir "some/module/directory";
+
+        my $model = Test::TAP::Model::Visual->new_with_tests(glob("t/*.t"));
+
+        my $client = Test::Chimps::Client->new(
+          server => 'http://www.example.com/cgi-bin/smoke-server.pl',
+          model  => $model
+        );
+
+        my ($status, $msg) = $client->send;
+
+        if (! $status) {
+          print "Error: $msg\n";
+          exit(1);
+        }
 
 INSTALLATION
+    To install this module, run the following commands:
 
-To install this module, run the following commands:
+        perl Makefile.PL
+        make
+        make test
+        make install
 
-    perl Makefile.PL
-    make
-    make test
-    make install
+DESCRIPTION
+    Chimps is the Collaborative Heterogeneous Infinite Monkey
+    Perfectionification Service. It is a framework for storing, viewing,
+    generating, and uploading smoke reports. This distribution provides
+    client-side modules and binaries for Chimps.
 
+METHODS
+  new ARGS
+    Creates a new Client object. ARGS is a hash whose valid keys are:
 
-SUPPORT AND DOCUMENTATION
+    *   file
 
-After installing, you can find documentation for this module with the perldoc command.
+        Mandatory. The value must be a "Test::TAP::Model". These are the
+        test results that will be submitted to the server.
 
-    perldoc Test::Chimps::Client
+    *   report_variables
 
-You can also look for information at:
+        Optional. A hashref of report variables and values to send to the
+        server.
 
-    Search CPAN
-        http://search.cpan.org/dist/Test-Chimps-Client
+    *   server
 
-    CPAN Request Tracker:
-        http://rt.cpan.org/NoAuth/Bugs.html?Dist=Test-Chimps-Client
+        Mandatory. The URI of the server script to upload the model to.
 
-    AnnoCPAN, annotated CPAN documentation:
-        http://annocpan.org/dist/Test-Chimps-Client
+  send
+    Submit the specified model to the server. This function's return value
+    is a list, the first of which indicates success or failure, and the
+    second of which is an error string.
 
-    CPAN Ratings:
-        http://cpanratings.perl.org/d/Test-Chimps-Client
+ACCESSORS
+    There are read-only accessors for model, report_variables, and server.
 
-COPYRIGHT AND LICENCE
+AUTHOR
+    Zev Benjamin, "<zev at cpan.org>"
 
-Copyright 2006 Best Practical Solutions.
-Portions copyright 2005-2006 the Pugs project.
+BUGS
+    Please report any bugs or feature requests to "bug-test-chimps at
+    rt.cpan.org", or through the web interface at
+    <http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Test-Chimps-Client>. I
+    will be notified, and then you'll automatically be notified of progress
+    on your bug as I make changes.
 
-This program is free software; you can redistribute it and/or modify it
-under the same terms as Perl itself.
+SUPPORT
+    You can find documentation for this module with the perldoc command.
+
+        perldoc Test::Chimps::Client
+
+    You can also look for information at:
+
+    *   Mailing list
+
+        Chimps has a mailman mailing list at chimps@bestpractical.com. You
+        can subscribe via the web interface at
+        <http://lists.bestpractical.com/cgi-bin/mailman/listinfo/chimps>.
+
+    *   AnnoCPAN: Annotated CPAN documentation
+
+        <http://annocpan.org/dist/Test-Chimps-Client>
+
+    *   CPAN Ratings
+
+        <http://cpanratings.perl.org/d/Test-Chimps-Client>
+
+    *   RT: CPAN's request tracker
+
+        <http://rt.cpan.org/NoAuth/Bugs.html?Dist=Test-Chimps-Client>
+
+    *   Search CPAN
+
+        <http://search.cpan.org/dist/Test-Chimps-Client>
+
+ACKNOWLEDGEMENTS
+    Some code in this module is based on smokeserv-client.pl from the Pugs
+    distribution.
+
+COPYRIGHT & LICENSE
+    Copyright 2006 Best Practical Solutions. Portions copyright 2005-2006
+    the Pugs project.
+
+    This program is free software; you can redistribute it and/or modify it
+    under the same terms as Perl itself.
+
