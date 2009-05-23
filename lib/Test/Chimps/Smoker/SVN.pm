@@ -40,7 +40,7 @@ sub next {
     my $self = shift;
 
     my $revision = $self->config->{revision};
-    my $cmd = "svn log -l1 -q -r $revision:HEAD ". $self->uri;
+    my $cmd = "svn log --limit 1 -q -r $revision:HEAD ". $self->uri;
     my ($next, $committer) = (`$cmd` =~ m/^r([0-9]+)\s+\|\s*.*?\s*\|/m);
     return () unless $next;
 
