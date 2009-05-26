@@ -460,7 +460,7 @@ sub _clean_project {
 sub _list_dbs {
     local $ENV{DBI_USER} = "postgres";
     local $@;
-    return map {s/.*dbname=(.*)/$1/ ? $_ : () }
+    return map {s/.*dbname=(.*)/$1/ ? $_ : () } grep defined && length,
       eval { DBI->data_sources("Pg") };
 }
 
