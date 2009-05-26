@@ -390,8 +390,7 @@ sub _checkout_project {
     $source->checkout( revision => $revision );
 
     my $tmpdir = $source->directory;
-    my $projectdir = $self->meta->{ $project->{'name'} }{'root'}
-        = File::Spec->catdir($tmpdir, $project->{root_dir});
+    my $projectdir = File::Spec->catdir($tmpdir, $project->{root_dir});
 
     my @libs = map File::Spec->catdir($projectdir, $_),
       'blib/lib', @{ $project->{libs} || [] };
