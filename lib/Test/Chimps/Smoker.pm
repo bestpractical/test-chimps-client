@@ -232,9 +232,9 @@ sub _smoke_n_times {
             CORE::sleep $self->sleep if $self->sleep;
         }
     } else {
-        for (my $i = 0; $i < $n;) {
-            $i++ if $self->_smoke_projects($projects);
-            CORE::sleep $self->sleep if $self->sleep;
+        for (my $i = 0; $i < $n; $i++) {
+            $self->_smoke_projects($projects);
+            CORE::sleep $self->sleep if $i+1 < $n && $self->sleep;
         }
     }
 }
