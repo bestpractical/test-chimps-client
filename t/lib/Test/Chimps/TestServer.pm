@@ -3,7 +3,7 @@ package Test::Chimps::TestServer;
 use strict;
 use warnings;
 
-use base qw(Test::HTTP::Server::Simple HTTP::Server::Simple::CGI Class::Accessor::Fast);
+use base qw(Test::HTTP::Server::Simple HTTP::Server::Simple::CGI Class::Accessor);
 __PACKAGE__->mk_accessors(qw(reports_in));
 
 use File::Spec;
