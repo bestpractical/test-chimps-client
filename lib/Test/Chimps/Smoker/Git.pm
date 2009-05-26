@@ -49,7 +49,7 @@ sub checkout {
     my $self = shift;
     my %args = @_;
 
-    system qw(git checkout), $args{'revision'};
+    system qw(git checkout), ($args{'revision'} || 'master');
 }
 
 sub next {
