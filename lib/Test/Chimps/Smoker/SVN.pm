@@ -28,12 +28,17 @@ sub checkout {
     my $self = shift;
     my %args = @_;
 
-    system("svn", "co", "-r", ($args{'revision'} || 'HEAD'), $self->uri, $self->directory);
+    unless ( -e '.svn' ) {
+        $self->run_cmd("checkout", "-r", ($args{'revision'} || 'HEAD'), $self->uri, $self->directory);
+    }
+    else {
+        $self->run_cmd("update", "-r", ($args{'revision'} || 'HEAD'), $self->directory);
+    }
 }
 
 sub clean {
     my $self = shift;
-    system(qw(svn revert -R .));
+    return $self->run_cmd(qw(revert -R .));
 }
 
 sub next {
@@ -45,6 +50,14 @@ sub next {
     return () unless $next;
 
     return (revision => $next, committer => $committer);
+}
+
+sub run_cmd {
+    my $self = shift;
+    my @args = @_;
+    system("svn", @args) == 0
+        or die "Couldn't run `". join(' ', "svn", @args ) ."`: $!";
+    return 1;
 }
 
 1;
