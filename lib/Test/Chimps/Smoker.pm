@@ -410,7 +410,7 @@ sub _checkout_project {
     my @otherlibs;
     if (defined $project->{dependencies}) {
         foreach my $dep (@{$project->{dependencies}}) {
-            if ( $self->source( $dep )->cloned ) {
+            if ( $self->meta->{ $dep }{'libs'} ) {
                 push @otherlibs, @{ $self->meta->{ $dep }{'libs'} };
                 next;
             }
