@@ -369,12 +369,17 @@ sub _clone_project {
     my $project = shift;
 
     my $source = $self->source( $project->{'name'} );
-    return 1 if $source->cloned;
+    if ( $source->cloned ) {
+        chdir $source->directory
+            or die "Couldn't change dir to ". $source->directory .": $!";
+        return 1;
+    }
 
     my $tmpdir = tempdir("chimps-XXXXXXX", TMPDIR => 1);
     $source->directory( $tmpdir );
+    chdir $source->directory
+        or die "Couldn't change dir to ". $source->directory .": $!";
     $source->clone;
-    chdir $tmpdir;
 
     $source->cloned(1);
 
@@ -387,10 +392,11 @@ sub _checkout_project {
     my $revision = shift;
 
     my $source = $self->source( $project->{'name'} );
+    my $co_dir = $source->directory;
+    chdir $co_dir or die "Couldn't change dir to $co_dir: $!";
     $source->checkout( revision => $revision );
 
-    my $tmpdir = $source->directory;
-    my $projectdir = File::Spec->catdir($tmpdir, $project->{root_dir});
+    my $projectdir = File::Spec->catdir($co_dir, $project->{root_dir});
 
     my @libs = map File::Spec->catdir($projectdir, $_),
       'blib/lib', @{ $project->{libs} || [] };
