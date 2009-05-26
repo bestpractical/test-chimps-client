@@ -42,10 +42,11 @@ sub clone {
 # XXX: git 1.5 can not clone into dir that already exists, so we delete dir
 # and clone then
     my $dir = $self->directory;
+    chdir '..' or die "Couldn't change dir to parent of $dir: $!";
     rmdir $dir
         or die "Couldn't remove '$dir' that should be empty tmp dir created for clone: $!";
-    system( qw(git clone), $self->uri, $dir ) == 0
-        or die "couldn't clone ". $self->uri .": $!";
+    $self->run_cmd( qw(clone), $self->uri, $dir );
+    chdir $dir or die "Couldn't change dir to $dir: $!";
 
     return 1;
 }
