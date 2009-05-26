@@ -5,6 +5,8 @@ use warnings;
 use base qw(Test::Chimps::Smoker::Source);
 __PACKAGE__->mk_ro_accessors(qw/uri/);
 
+use File::Path qw(remove_tree);
+
 sub revision_info {
     my $self = shift;
     my $revision = shift;
@@ -38,7 +40,14 @@ sub checkout {
 
 sub clean {
     my $self = shift;
-    return $self->run_cmd(qw(revert -R .));
+    $self->run_cmd(qw(revert -R .));
+
+    open my $status_fh, "-|", qw(svn status .)
+        or die "Can't call program `svn status .`: $!";
+    while ( my $s = <$status_fh> ) {
+        next unless my ($path) = ($s =~ /^\?\s*(.*)$/);
+        remove_tree( File::Spec->catdir($self->directory, $path) );
+    }
 }
 
 sub next {
