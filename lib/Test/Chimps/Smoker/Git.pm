@@ -8,8 +8,19 @@ __PACKAGE__->mk_ro_accessors(qw/uri/);
 sub revision_after {
     my $self = shift;
     my $revision = shift;
+    
+# in case of the following topology:
+#    H
+# B1   B2
+#    R
+# `git log B1..H` always has B2 when `git log B2..H` always has B1
+# we end up in a loop. let's use date of the current revision to
+# to cut of anything older. In this case some commits in branches
+# wouldn't be tested
+    my $cmd = 'git log -n1 '. $revision;
+    my ($date) = (`$cmd` =~ m/^date:\s*(.*)$/im);
 
-    my $cmd = "git log --reverse $revision..origin";
+    $cmd = "git log --reverse --since='$date' $revision..origin";
     my ($next)  = (`$cmd` =~ m/^commit\s+([a-f0-9]+)$/im);
 
     return $next;
