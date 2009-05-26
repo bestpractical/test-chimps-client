@@ -67,8 +67,14 @@ sub checkout {
 sub next {
     my $self = shift;
 
-    my $revision = $self->revision_after( $self->config->{revision} );
-    return () unless $revision;
+    my $current = $self->config->{revision};
+
+    my $revision = $self->revision_after( $current );
+    unless ( $revision ) {
+        $self->run_cmd('pull');
+        $revision = $self->revision_after( $current );
+        return () unless $revision;
+    }
 
     my $committer = $self->committer($revision);
 
