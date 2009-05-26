@@ -53,15 +53,15 @@ sub clone {
 
 sub clean {
     my $self = shift;
-    system qw(git clean -fd);
-    system qw(git checkout master);
+    $self->run_cmd(qw(clean -fd));
+    $self->run_cmd(qw(checkout master));
 }
 
 sub checkout {
     my $self = shift;
     my %args = @_;
 
-    system qw(git checkout), ($args{'revision'} || 'master');
+    $self->run_cmd(qw(checkout), ($args{'revision'} || 'master'));
 }
 
 sub next {
@@ -73,6 +73,11 @@ sub next {
     my $committer = $self->committer($revision);
 
     return (revision => $revision, committer => $committer);
+}
+
+sub run_cmd {
+    my $self = shift;
+    return $self->SUPER::run_cmd( "git", @_ );
 }
 
 1;

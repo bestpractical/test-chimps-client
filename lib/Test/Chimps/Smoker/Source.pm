@@ -31,4 +31,12 @@ sub clean { return 1 }
 
 sub next { return () }
 
+sub run_cmd {
+    my $self = shift;
+    my @args = @_;
+    system(@args) == 0
+        or die "Couldn't run `". join(' ', @args ) ."`: $!";
+    return 1;
+}
+
 1;
