@@ -54,10 +54,7 @@ sub next {
 
 sub run_cmd {
     my $self = shift;
-    my @args = @_;
-    system("svn", @args) == 0
-        or die "Couldn't run `". join(' ', "svn", @args ) ."`: $!";
-    return 1;
+    return $self->SUPER::run_cmd( "svn", @_ );
 }
 
 1;
