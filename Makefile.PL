@@ -16,6 +16,9 @@ requires('Params::Validate');
 requires('TAP::Harness::Archive');
 requires('YAML::Syck');
 
+tests('t/*.t t/*/*.t');
+extra_tests;
+
 build_requires('Test::Dependencies');
 build_requires('Test::HTTP::Server::Simple');
 build_requires('HTTP::Server::Simple::CGI');
