@@ -244,7 +244,10 @@ sub _smoke_projects {
     my $projects = shift;
 
     foreach my $project (@$projects) {
-        $self->_smoke_once($project);
+        local $@;
+        eval { $self->_smoke_once($project) };
+        warn "Couldn't smoke project '$project': $@"
+            if $@;
     }
 }
 
@@ -287,7 +290,6 @@ sub _smoke_once {
             lib => \@libs,
         } );
     {
-
         # Runtests apparently grows PERL5LIB -- local it so it doesn't
         # grow without bound
         local $ENV{PERL5LIB} = $ENV{PERL5LIB};
