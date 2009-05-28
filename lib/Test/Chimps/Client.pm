@@ -22,24 +22,35 @@ Test::Chimps::Client - Send smoke test results to a server
 This module simplifies the process of sending smoke test results
 (in the form of C<Test::TAP::Model>s) to a smoke server.
 
-    use Test::Chimps::Client;
-    use Test::TAP::Model::Visual;
+    use File::Temp;
+    my $tmpfile = File::Temp->new( SUFFIX => ".tar.gz" );
 
+    use TAP::Harness::Archive;
     chdir "some/module/directory";
+    my $harness = TAP::Harness::Archive->new( {
+        archive          => $tmpfile,
+        extra_properties => {
+            project   => 'my project',
+            revision  => 'some revision',
+            committer => 'me',
+            osname    => $Config{osname},
+            osvers    => $Config{osvers},
+            archname  => $Config{archname},
+        },
+        ....
+    } );
+    $harness->runtests(glob('t/*.t'));
 
-    my $model = Test::TAP::Model::Visual->new_with_tests(glob("t/*.t"));
-
+    use Test::Chimps::Client;
     my $client = Test::Chimps::Client->new(
-      server => 'http://www.example.com/cgi-bin/smoke-server.pl',
-      model  => $model
+        archive => $tmpfile,
+        server  => "http://...",
     );
 
+    print "Sending smoke report for $server\n";
     my ($status, $msg) = $client->send;
-
-    if (! $status) {
-      print "Error: $msg\n";
-      exit(1);
-    }
+    die "Error: the server responded: $msg\n"
+        unless $status;
 
 =head1 INSTALLATION
 
@@ -186,6 +197,10 @@ Chimps has a mailman mailing list at
 L<chimps@bestpractical.com>.  You can subscribe via the web
 interface at
 L<http://lists.bestpractical.com/cgi-bin/mailman/listinfo/chimps>.
+
+=item * Repository
+
+L<http://github.com/bestpractical/test-chimps-client>
 
 =item * AnnoCPAN: Annotated CPAN documentation
 
