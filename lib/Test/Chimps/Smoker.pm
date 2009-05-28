@@ -13,8 +13,6 @@ use Test::Chimps::Client;
 use TAP::Harness::Archive;
 use YAML::Syck;
 
-use DBI;
-
 =head1 NAME
 
 Test::Chimps::Smoker - Poll a set of repositories and run tests when they change
@@ -271,7 +269,6 @@ sub _smoke_once {
         $self->update_revision_in_config( $project => $revision );
         return 0;
     }
-    my @dbs = $self->_list_dbs;
 
     print "running tests for $project\n";
     my $test_glob = $config->{test_glob} || 't/*.t t/*/t/*.t';
@@ -296,11 +293,9 @@ sub _smoke_once {
         $harness->runtests(glob($test_glob));
     }
 
-    $self->_unroll_env_stack;
-
     $self->_clean_project( $config );
 
-    $self->_clean_dbs(@dbs);
+    $self->_unroll_env_stack;
 
     if ( my $server = $self->server ) {
         my $client = Test::Chimps::Client->new(
@@ -435,21 +430,44 @@ sub _checkout_project {
 
     local $ENV{PERL5LIB} = join(":",@libs,$ENV{PERL5LIB});
 
-    if (defined $project->{configure_cmd}) {
-        my $ret = system($project->{configure_cmd});
+    if (defined( my $cmd = $project->{'configure_cmd'} )) {
+        my $ret = system($cmd);
         if ($ret) {
-            print "Return value of @{[$project->{configure_cmd}]} from $projectdir = $ret\n"
-              if $ret;
+            print STDERR "Return value of $cmd from $projectdir = $ret\n"
+                if $ret;
             return ();
         }
     }
 
+    if (defined( my $cmd = $project->{'clean_cmd'} )) {
+        print "Going to run project cleaner '$cmd'\n";
+        my @args = (
+            '--project', $project->{'name'},
+            '--config', $self->config_file,
+        );
+        open my $fh, '-|', join(' ', $cmd, @args)
+            or die "Couldn't run `". join(' ', $cmd, @args) ."`: $!";
+        $self->meta->{ $project->{'name'} }->{'cleaner'} = do { local $/; <$fh> };
+        close $fh;
+    }
     return @libs;
 }
 
 sub _clean_project {
     my $self = shift;
     my $project = shift;
+
+    if (defined( my $cmd = $project->{'clean_cmd'} )) {
+        my @args = (
+            '--project', $project->{'name'},
+            '--config', $self->config_file,
+            '--clean',
+        );
+        open my $fh, '|-', join(' ', $cmd, @args)
+            or die "Couldn't run `". join(' ', $cmd, @args) ."`: $!";
+        print $fh $self->meta->{ $project->{'name'} }->{'cleaner'};
+        close $fh;
+    }
 
     $self->source( $project->{'name'} )->clean;
 
@@ -458,25 +476,6 @@ sub _clean_project {
             $self->_clean_project( $self->config->{ $dep } );
         }
     }
-}
-
-sub _list_dbs {
-    local $ENV{DBI_USER} = "postgres";
-    local $@;
-    return map {s/.*dbname=(.*)/$1/ ? $_ : () } grep defined && length,
-      eval { DBI->data_sources("Pg") };
-}
-
-sub _clean_dbs {
-    my %skip = map {($_ => 1)} @_;
-
-    local $ENV{DBI_USER} = "postgres";
-    my @dbs = grep {not $skip{$_}}
-      _list_dbs();
-    return unless @dbs;
-
-    my $dbh = DBI->connect("dbi:Pg:dbname=template1","postgres","",{RaiseError => 1});
-    $dbh->do("DROP DATABASE $_") for @dbs;
 }
 
 sub _push_onto_env_stack {

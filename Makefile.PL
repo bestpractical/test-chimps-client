@@ -4,7 +4,6 @@ readme_from     'lib/Test/Chimps/Client.pm';
 
 # Specific dependencies
 requires('Class::Accessor');
-requires('DBI');
 requires('Cwd');
 requires('File::Spec');
 requires('File::Path');
