@@ -106,8 +106,8 @@ sub _init {
     my %args = validate_with(
         params => \@_,
         spec   => {
-            server      => 1,
             config_file => 1,
+            server      => 0,
             simulate    => 0,
             iterations  => {
                 optional => 1,
@@ -267,7 +267,7 @@ sub _smoke_once {
 
     my @libs = $self->_checkout_project($config, $revision);
     unless (@libs) {
-        print "Skipping report report for $project revision $revision due to build failure\n";
+        print "Skipping report for $project revision $revision due to build failure\n";
         $self->update_revision_in_config( $project => $revision );
         return 0;
     }
