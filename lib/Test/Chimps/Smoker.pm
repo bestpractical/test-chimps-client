@@ -614,8 +614,8 @@ testing commands should be run.
 
 A hash describing repository of the project. Mandatory key is
 type which must match a source class name, for example SVN or
-Git. Another things is uri option, but a particular class
-may have more options.
+Git. Particular source class may have more options, but at this
+moment Git and SVN have only 'uri' option.
 
 =item * env
 
@@ -652,6 +652,18 @@ t/*.t t/*/t/*.t
 A list of paths, relative to the project root, which should be added
 to @INC.  C<blib/lib> is automatically added, but you may need to
 include C<lib> here, for instance.
+
+=item * clean_cmd
+
+The command to clean before or after each iteration of the project testing.
+Called B<twice> before running tests and after with --config, --project
+arguments and --clean argument when called for the second time after testing.
+
+When called before testing (without --clean), state information can be printed
+to STDOUT. Later when called after testing (with --clean), the state info can
+be read from STDIN.
+
+An example you can find in a tarball of this distribution - F<examples/pg_dbs_cleaner.pl>.
 
 =back
 
