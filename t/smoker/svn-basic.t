@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use lib 't/lib/';
 
-use Test::More tests => 14;
+use Test::More tests => 13;
 
 use Test::Chimps::Smoker;
 use Test::Chimps::TestServer;
