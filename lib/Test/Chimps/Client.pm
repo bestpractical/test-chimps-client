@@ -4,7 +4,7 @@ use 5.008;
 use warnings;
 use strict;
 
-our $VERSION = '0.11';
+our $VERSION = '0.11_01';
 
 use Carp;
 use Params::Validate qw/:all/;

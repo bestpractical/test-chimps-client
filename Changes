@@ -1,6 +1,8 @@
 Revision history for Test-Chimps-Client
 
 0.12
+        * some changes are not backward compatible
+        * switched to TAP::Harness::Archive
         * git support
         * suport for one checkout/clone per smoking session
           to save bandwith
