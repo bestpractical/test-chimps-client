@@ -1,5 +1,12 @@
 Revision history for Test-Chimps-Client
 
+0.12
+        * git support
+        * suport for one checkout/clone per smoking session
+          to save bandwith
+        * clean_cmd config option
+        * updated docs and tests
+
 0.05    Sun Aug 13 14:43:14 EDT 2006
         * added information about the mailing list
         * documented chimps-smoker.pl
