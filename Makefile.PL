@@ -6,7 +6,7 @@ readme_from     'lib/Test/Chimps/Client.pm';
 requires('Class::Accessor');
 requires('Cwd');
 requires('File::Spec');
-requires('File::Path');
+requires('File::Path' => '2.0'); # new style calling conventions
 requires('File::Temp');
 requires('Scalar::Util');
 requires('LWP::UserAgent');
