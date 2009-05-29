@@ -39,4 +39,15 @@ sub run_cmd {
     return 1;
 }
 
+sub chdir {
+    my $self = shift;
+    my $sub = shift;
+    my $dir = $self->directory;
+    if ( defined $sub && length $sub ) {
+        $dir = File::Spec->catdir( $dir, $sub );
+    }
+    CORE::chdir($dir)
+        or die "Couldn't change dir to '$dir': $!";
+}
+
 1;

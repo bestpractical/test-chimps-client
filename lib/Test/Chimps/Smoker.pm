@@ -367,15 +367,13 @@ sub _clone_project {
 
     my $source = $self->source( $project->{'name'} );
     if ( $source->cloned ) {
-        chdir $source->directory
-            or die "Couldn't change dir to ". $source->directory .": $!";
+        $source->chdir;
         return 1;
     }
 
     my $tmpdir = tempdir("chimps-XXXXXXX", TMPDIR => 1);
     $source->directory( $tmpdir );
-    chdir $source->directory
-        or die "Couldn't change dir to ". $source->directory .": $!";
+    $source->chdir;
     $source->clone;
 
     $source->cloned(1);
@@ -389,11 +387,10 @@ sub _checkout_project {
     my $revision = shift;
 
     my $source = $self->source( $project->{'name'} );
-    my $co_dir = $source->directory;
-    chdir $co_dir or die "Couldn't change dir to $co_dir: $!";
+    $source->chdir;
     $source->checkout( revision => $revision );
 
-    my $projectdir = File::Spec->catdir($co_dir, $project->{root_dir});
+    my $projectdir = File::Spec->catdir($source->directory, $project->{root_dir});
 
     my @libs = map File::Spec->catdir($projectdir, $_),
       'blib/lib', @{ $project->{libs} || [] };
@@ -423,10 +420,7 @@ sub _checkout_project {
     my %seen;
     @libs = grep {not $seen{$_}++} @libs, @otherlibs;
 
-    unless (chdir($projectdir)) {
-        print "chdir to $projectdir failed -- check value of root_dir?\n";
-        return ();
-    }
+    $source->chdir($project->{root_dir});
 
     local $ENV{PERL5LIB} = join(":",@libs,$ENV{PERL5LIB});
 
@@ -457,6 +451,9 @@ sub _clean_project {
     my $self = shift;
     my $project = shift;
 
+    my $source = $self->source( $project->{'name'} );
+    $source->chdir;
+
     if (defined( my $cmd = $project->{'clean_cmd'} )) {
         my @args = (
             '--project', $project->{'name'},
@@ -469,7 +466,7 @@ sub _clean_project {
         close $fh;
     }
 
-    $self->source( $project->{'name'} )->clean;
+    $source->clean;
 
     if (defined $project->{dependencies}) {
         foreach my $dep (@{$project->{dependencies}}) {
