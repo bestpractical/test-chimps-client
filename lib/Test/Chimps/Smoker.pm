@@ -396,11 +396,6 @@ sub _checkout_project {
       'blib/lib', @{ $project->{libs} || [] };
     $self->meta->{ $project->{'name'} }{'libs'} = [@libs];
 
-    $self->_push_onto_env_stack({
-        $project->{env}? (%{$project->{env}}) : (),
-        'CHIMPS_'. uc($project->{'name'}) .'_ROOT' => $projectdir,
-    });
-
     my @otherlibs;
     if (defined $project->{dependencies}) {
         foreach my $dep (@{$project->{dependencies}}) {
@@ -416,6 +411,11 @@ sub _checkout_project {
             }
         }
     }
+
+    $self->_push_onto_env_stack({
+        $project->{env}? (%{$project->{env}}) : (),
+        'CHIMPS_'. uc($project->{'name'}) .'_ROOT' => $projectdir,
+    });
 
     my %seen;
     @libs = grep {not $seen{$_}++} @libs, @otherlibs;
@@ -479,21 +479,35 @@ sub _push_onto_env_stack {
     my $self = shift;
     my $vars = shift;
 
+    my @with_subst = ();
+
     my $frame = {};
-    foreach my $var (keys %$vars) {
+    while ( my ($var, $value) = each %$vars ) {
         if (exists $ENV{$var}) {
             $frame->{$var} = $ENV{$var};
         } else {
             $frame->{$var} = undef;
         }
-        my $value = $vars->{$var};
 
         # old value substitution
-        $value =~ s/\$$var/$ENV{$var}/g;
+        if ( $value =~ /\$/ ) {
+            push @with_subst, $var;
+            next;
+        }
 
         print "setting environment variable $var to $value\n";
         $ENV{$var} = $value;
     }
+
+    for my $var (@with_subst) {
+        my $value = $vars->{$var};
+        while ( my ($use) = ($value =~ /\$(\S+)/) ) {
+            $value =~ s/\$\Q$use/$ENV{$use}/ge;
+        }
+        print "setting environment variable $var to $value\n";
+        $ENV{$var} = $value;
+    }
+
     push @{$self->_env_stack}, $frame;
 }
 
