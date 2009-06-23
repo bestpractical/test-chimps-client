@@ -18,6 +18,7 @@ sub revision_info {
     my ($last_changed)    = ($info_out =~ m/^Last Changed Rev: (\d+)/m);
     my ($committer)       = ($info_out =~ m/^Last Changed Author: (\w+)/m);
     my ($committed_date)  = ($info_out =~ m/^Last Changed Date: ([^(]+)/m);
+    $committed_date =~ s/\s+$//;
 
     return ($latest_revision, $last_changed, $committer, $committed_date);
 }
@@ -64,6 +65,8 @@ sub next {
     my ($next, $committer, $committed_date) = (`$cmd` =~
             m/^r([0-9]+)\s+\|\s*(.*?)\s*\|\s*([^(]*)/m);
     return () unless $next;
+
+    $committed_date =~ s/\s+$//;
 
     return (
         revision       => $next,

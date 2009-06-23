@@ -41,7 +41,7 @@ sub committed_date {
     my $revision = shift;
 
     my $cmd = 'git log -n1'. ($revision? " $revision" : '');
-    my ($date) = (`$cmd` =~ m/^date:\s*(.*)$/im);
+    my ($date) = (`$cmd` =~ m/^date:\s*(.*?)\s*$/im);
 
     return $date;
 }
