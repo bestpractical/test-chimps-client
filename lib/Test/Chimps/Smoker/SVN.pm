@@ -55,10 +55,16 @@ sub next {
 
     my $revision = $self->config->{revision};
     my $cmd = "svn log --limit 1 -q -r ". ($revision+1) .":HEAD ". $self->uri;
-    my ($next, $committer) = (`$cmd` =~ m/^r([0-9]+)\s+\|\s*(.*?)\s*\|/m);
+    my ( $next, $committer, $committed_date ) =
+      ( `$cmd` =~ m/^r([0-9]+)\s+\|\s*(.*?)\s*\|\s*([^(]*)/m );
     return () unless $next;
 
-    return (revision => $next, committer => $committer);
+    return (
+        revision       => $revision,
+        committer      => $committer,
+        committed_date => $committed_date,
+    );
+
 }
 
 sub run_cmd {

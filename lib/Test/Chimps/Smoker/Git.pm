@@ -36,6 +36,16 @@ sub committer {
     return $committer;
 }
 
+sub committed_date {
+    my $self = shift;
+    my $revision = shift;
+
+    my $cmd = 'git log -n1'. ($revision? " $revision" : '');
+    my ($date) = (`$cmd` =~ m/^date:\s*(.*)$/im);
+
+    return $date;
+}
+
 sub clone {
     my $self = shift;
 
@@ -77,8 +87,13 @@ sub next {
     }
 
     my $committer = $self->committer($revision);
+    my $committed_date = $self->committed_date($revision);
 
-    return (revision => $revision, committer => $committer);
+    return (
+        revision       => $revision,
+        committer      => $committer,
+        committed_date => $committed_date,
+    );
 }
 
 sub run_cmd {
