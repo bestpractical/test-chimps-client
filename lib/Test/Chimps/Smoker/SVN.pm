@@ -17,13 +17,19 @@ sub revision_info {
     my ($latest_revision) = ($info_out =~ m/^Revision: (\d+)/m);
     my ($last_changed)    = ($info_out =~ m/^Last Changed Rev: (\d+)/m);
     my ($committer)       = ($info_out =~ m/^Last Changed Author: (\w+)/m);
+    my ($committed_date)  = ($info_out =~ m/^Last Changed Date: ([^(]+)/m);
 
-    return ($latest_revision, $last_changed, $committer);
+    return ($latest_revision, $last_changed, $committer, $committed_date);
 }
 
 sub committer {
     my $self = shift;
     return ($self->revision_info( @_ ))[2];
+}
+
+sub committed_date {
+    my $self = shift;
+    return ($self->revision_info( @_ ))[3];
 }
 
 sub checkout {
@@ -55,16 +61,15 @@ sub next {
 
     my $revision = $self->config->{revision};
     my $cmd = "svn log --limit 1 -q -r ". ($revision+1) .":HEAD ". $self->uri;
-    my ( $next, $committer, $committed_date ) =
-      ( `$cmd` =~ m/^r([0-9]+)\s+\|\s*(.*?)\s*\|\s*([^(]*)/m );
+    my ($next, $committer, $committed_date) = (`$cmd` =~
+            m/^r([0-9]+)\s+\|\s*(.*?)\s*\|\s*([^(]*)/m);
     return () unless $next;
 
     return (
-        revision       => $revision,
+        revision       => $next,
         committer      => $committer,
         committed_date => $committed_date,
     );
-
 }
 
 sub run_cmd {
