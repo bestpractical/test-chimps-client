@@ -27,7 +27,7 @@ sub revision_after {
     my $cmd = 'git log -n1 '. $revision;
     my ($date) = (`$cmd` =~ m/^date:\s*(.*)$/im);
 
-    $cmd = "git log --reverse --since='$date' $revision..". $self->branch;
+    $cmd = "git log --reverse --since='$date' $revision..origin/". $self->branch;
     my ($next)  = (`$cmd` =~ m/^commit\s+([a-f0-9]+)$/im);
 
     return $next;
