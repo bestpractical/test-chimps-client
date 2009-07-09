@@ -3,7 +3,14 @@ package Test::Chimps::Smoker::Git;
 use strict;
 use warnings;
 use base qw(Test::Chimps::Smoker::Source);
-__PACKAGE__->mk_ro_accessors(qw/uri/);
+__PACKAGE__->mk_ro_accessors(qw/uri branch/);
+
+
+sub _init {
+    my $self = shift;
+    $self->{'branch'} ||= 'master';
+    return $self->SUPER::_init( @_ );
+}
 
 sub revision_after {
     my $self = shift;
@@ -20,7 +27,7 @@ sub revision_after {
     my $cmd = 'git log -n1 '. $revision;
     my ($date) = (`$cmd` =~ m/^date:\s*(.*)$/im);
 
-    $cmd = "git log --reverse --since='$date' $revision..origin";
+    $cmd = "git log --reverse --since='$date' $revision..". $self->branch;
     my ($next)  = (`$cmd` =~ m/^commit\s+([a-f0-9]+)$/im);
 
     return $next;
@@ -54,14 +61,14 @@ sub clone {
 sub clean {
     my $self = shift;
     $self->run_cmd(qw(clean -fd));
-    $self->run_cmd(qw(checkout master));
+    $self->run_cmd('checkout', $self->branch);
 }
 
 sub checkout {
     my $self = shift;
     my %args = @_;
 
-    $self->run_cmd(qw(checkout), ($args{'revision'} || 'master'));
+    $self->run_cmd(qw(checkout), ($args{'revision'} || $self->branch));
 }
 
 sub next {
