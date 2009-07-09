@@ -279,6 +279,7 @@ sub _smoke_once {
                 project   => $project,
                 revision  => $revision,
                 committer => $next{'committer'},
+                committed_date => $next{'committed_date'},
                 osname    => $Config{osname},
                 osvers    => $Config{osvers},
                 archname  => $Config{archname},

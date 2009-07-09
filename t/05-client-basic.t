@@ -1,10 +1,9 @@
 #!perl
 
-use Test::More tests => 5;
+use Test::More tests => 4;
 
 BEGIN {
   use_ok( 'Test::Chimps::Client' );
-  use_ok( 'Test::TAP::Model::Visual' );
 }
 
 use File::Temp;
