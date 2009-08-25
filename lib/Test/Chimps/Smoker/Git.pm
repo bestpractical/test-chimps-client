@@ -65,6 +65,16 @@ sub clone {
     $self->run_cmd( qw(clone), $self->uri, $dir );
     chdir $dir or die "Couldn't change dir to $dir: $!";
 
+    # execute this manually since Chimps will die if system
+    # doesn't return 0 and we're actually expecting this to 
+    # fail and return 0 in repos with multiple branches
+    my $cmd = 'git rev-parse -q --verify '.$self->branch;
+    my $local_branch = `$cmd`;
+    unless ( $local_branch ) {
+        # old gits (like the one on smoke) need -b with -t
+        $self->run_cmd( 'checkout', '-t', '-b', $self->branch, 'origin/'.$self->branch );
+    }
+
     return 1;
 }
 
