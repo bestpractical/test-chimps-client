@@ -22,9 +22,9 @@ sub revision_after {
     my $branch = $self->branch;
     my $cmd = "git rev-parse --not --branches | grep -v \$(git rev-parse $branch) | git rev-list --stdin $revision..origin/$branch | tail -n 1";
     my $next = `$cmd`;
-    chomp($next) if $next;
+    chomp($next);
 
-    die "next $next revision $revision";
+    return $next;
 }
 
 sub committer {
