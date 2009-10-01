@@ -15,22 +15,16 @@ sub _init {
 sub revision_after {
     my $self = shift;
     my $revision = shift;
-    
-# in case of the following topology:
-#    H
-# B1   B2
-#    R
-# `git log B1..H` always has B2 when `git log B2..H` always has B1
-# we end up in a loop. let's use date of the current revision to
-# to cut of anything older. In this case some commits in branches
-# wouldn't be tested
-    my $cmd = 'git log -n1 '. $revision;
-    my ($date) = (`$cmd` =~ m/^date:\s*(.*)$/im);
 
-    $cmd = "git log --reverse --since='$date' $revision..origin/". $self->branch;
-    my ($next)  = (`$cmd` =~ m/^commit\s+([a-f0-9]+)$/im);
+    # stolen shamelessly from post-receive-email
+    # this probably still loops and needs some date support
+    # or a stash or shas to test
+    my $branch = $self->branch;
+    my $cmd = "git rev-parse --not --branches | grep -v \$(git rev-parse $branch) | git rev-list --stdin $revision..origin/$branch | tail -n 1";
+    my $next = `$cmd`;
+    chomp($next) if $next;
 
-    return $next;
+    die "next $next revision $revision";
 }
 
 sub committer {
