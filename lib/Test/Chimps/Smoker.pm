@@ -71,20 +71,12 @@ Defaults to simulation mode when reports are sent.
 Optional.  Number of seconds to sleep between repository checks.
 Defaults to 60 seconds.
 
-=item * simulate [DEPRECATED]
-
-[DEPRECATED] Just don't provide server option to enable simulation.
-
-Don't actually submit the smoke reports, just run the tests.  This
-I<does>, however, increment the revision numbers in the config
-file.
-
 =back
 
 =cut
 
 use base qw/Class::Accessor/;
-__PACKAGE__->mk_ro_accessors(qw/server config_file simulate sleep/);
+__PACKAGE__->mk_ro_accessors(qw/server config_file sleep/);
 __PACKAGE__->mk_accessors(
     qw/_env_stack meta config projects iterations/);
 
@@ -106,7 +98,6 @@ sub _init {
         spec   => {
             config_file => 1,
             server      => 0,
-            simulate    => 0,
             iterations  => {
                 optional => 1,
                 default  => 'inf'
@@ -134,9 +125,6 @@ sub _init {
     foreach my $key (keys %args) {
         $self->{$key} = $args{$key};
     }
-
-    # support simulate for a while
-    delete $self->{'server'} if $args{'simulate'};
 
     # make it absolute so we can update it later from any dir we're in
     $self->{'config_file'} = abs_path($self->{'config_file'});
