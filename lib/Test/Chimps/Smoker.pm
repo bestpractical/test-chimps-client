@@ -71,6 +71,10 @@ Defaults to simulation mode when reports are sent.
 Optional.  Number of seconds to sleep between repository checks.
 Defaults to 60 seconds.
 
+=item * jobs
+
+Optional.  Number of test jobs to run in parallel.  Defaults to 1.
+
 =back
 
 =cut
