@@ -82,7 +82,7 @@ Optional.  Number of test jobs to run in parallel.  Defaults to 1.
 use base qw/Class::Accessor/;
 __PACKAGE__->mk_ro_accessors(qw/server config_file sleep jobs/);
 __PACKAGE__->mk_accessors(
-    qw/_env_stack meta config projects iterations/);
+    qw/_env_stack meta config/);
 
 # add a signal handler so destructor gets run
 $SIG{INT} = sub {print "caught sigint.  cleaning up...\n"; exit(1)};
@@ -102,14 +102,6 @@ sub _init {
         spec   => {
             config_file => 1,
             server      => 0,
-            iterations  => {
-                optional => 1,
-                default  => 'inf'
-              },
-            projects => {
-                optional => 1,
-                default  => 'all'
-              },
             jobs => {
                 optional => 1,
                 type     => SCALAR,
