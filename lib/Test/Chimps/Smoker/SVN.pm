@@ -36,7 +36,7 @@ sub committed_date {
 sub clone {
     my $self = shift;
 
-    $self->revision( ($self->revision_info)[0] - 1 ) unless $self->revision;
+    $self->revision( ($self->revision_info)[0] - 1 ) unless defined $self->revision;
     $self->run_cmd("checkout", "-r", $self->revision, $self->uri, $self->directory);
 }
 
