@@ -69,6 +69,8 @@ sub clone {
         $self->run_cmd( 'checkout', '-t', '-b', $self->branch, 'origin/'.$self->branch );
     }
 
+    $self->revision($self->branch . "^") unless $self->revision;
+
     return 1;
 }
 
