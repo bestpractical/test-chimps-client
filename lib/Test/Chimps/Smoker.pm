@@ -80,7 +80,7 @@ Optional.  Number of test jobs to run in parallel.  Defaults to 1.
 =cut
 
 use base qw/Class::Accessor/;
-__PACKAGE__->mk_ro_accessors(qw/server config_file sleep/);
+__PACKAGE__->mk_ro_accessors(qw/server config_file sleep jobs/);
 __PACKAGE__->mk_accessors(
     qw/_env_stack meta config projects iterations/);
 
