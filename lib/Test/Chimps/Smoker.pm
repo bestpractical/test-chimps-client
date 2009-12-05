@@ -160,6 +160,8 @@ sub smoke {
     my $self = shift;
     my $config = $self->config;
 
+    my $dir = Cwd::getcwd;
+
     my %args = validate_with(
         params => \@_,
         spec   => {
@@ -187,6 +189,7 @@ sub smoke {
     }
 
     $self->_smoke_n_times($iterations, $projects);
+    chdir $dir;
 }
 
 sub _validate_projects_opt {
