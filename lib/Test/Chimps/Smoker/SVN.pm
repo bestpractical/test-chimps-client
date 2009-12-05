@@ -33,16 +33,17 @@ sub committed_date {
     return ($self->revision_info( @_ ))[3];
 }
 
+sub clone {
+    my $self = shift;
+
+    $self->run_cmd("checkout", "-r", $self->revision, $self->uri, $self->directory);
+}
+
 sub checkout {
     my $self = shift;
     my %args = @_;
 
-    unless ( -e '.svn' ) {
-        $self->run_cmd("checkout", "-r", ($args{'revision'} || 'HEAD'), $self->uri, $self->directory);
-    }
-    else {
-        $self->run_cmd("update", "-r", ($args{'revision'} || 'HEAD'), $self->directory);
-    }
+    $self->run_cmd("update", "-r", ($args{'revision'} || 'HEAD'), $self->directory);
 }
 
 sub clean {
