@@ -82,9 +82,9 @@ sub clean {
 
 sub checkout {
     my $self = shift;
-    my %args = @_;
+    my $revision = shift;
 
-    $self->run_cmd(qw(checkout), ($args{'revision'} || $self->branch));
+    $self->run_cmd(qw(checkout), $revision || $self->branch);
 }
 
 sub next {

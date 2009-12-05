@@ -88,7 +88,7 @@ sub do_checkout {
     my $revision = shift;
 
     $self->chdir;
-    $self->checkout( revision => $revision );
+    $self->checkout( $revision );
 
     my $projectdir = File::Spec->catdir($self->directory, $self->root_dir);
 

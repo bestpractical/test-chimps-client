@@ -42,9 +42,9 @@ sub clone {
 
 sub checkout {
     my $self = shift;
-    my %args = @_;
+    my $revision = shift;
 
-    $self->run_cmd("update", "-r", ($args{'revision'} || 'HEAD'), $self->directory);
+    $self->run_cmd("update", "-r", ($revision || 'HEAD'), $self->directory);
 }
 
 sub clean {
