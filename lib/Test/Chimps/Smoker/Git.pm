@@ -53,11 +53,11 @@ sub clone {
 # XXX: git 1.5 can not clone into dir that already exists, so we delete dir
 # and clone then
     my $dir = $self->directory;
-    chdir '..' or die "Couldn't change dir to parent of $dir: $!";
+    chdir "$dir/.." or die "Couldn't change dir to parent of $dir: $!";
     rmdir $dir
         or die "Couldn't remove '$dir' that should be empty tmp dir created for clone: $!";
     $self->run_cmd( qw(clone), $self->uri, $dir );
-    chdir $dir or die "Couldn't change dir to $dir: $!";
+    $self->chdir;
 
     # execute this manually since Chimps will die if system
     # doesn't return 0 and we're actually expecting this to 
@@ -88,7 +88,7 @@ sub checkout {
 sub next {
     my $self = shift;
 
-    my $current = $self->config->{revision};
+    my $current = $self->revision;
 
     my $revision = $self->revision_after( $current );
     unless ( $revision ) {

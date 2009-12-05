@@ -5,8 +5,6 @@ use strict;
 
 use Config;
 use Cwd qw(abs_path);
-use File::Path;
-use File::Temp qw/tempdir/;
 use Params::Validate qw/:all/;
 use Test::Chimps::Smoker::Source;
 use Test::Chimps::Client;
@@ -82,7 +80,7 @@ Optional.  Number of test jobs to run in parallel.  Defaults to 1.
 use base qw/Class::Accessor/;
 __PACKAGE__->mk_ro_accessors(qw/server config_file sleep jobs/);
 __PACKAGE__->mk_accessors(
-    qw/_env_stack meta config/);
+    qw/_env_stack sources config/);
 
 # add a signal handler so destructor gets run
 $SIG{INT} = sub {print "caught sigint.  cleaning up...\n"; exit(1)};
@@ -126,7 +124,7 @@ sub _init {
     $self->{'config_file'} = abs_path($self->{'config_file'});
 
     $self->_env_stack([]);
-    $self->meta({});
+    $self->sources({});
 
     $self->load_config;
 }
@@ -237,17 +235,17 @@ sub _smoke_once {
     my $self = shift;
     my $project = shift;
 
-    my $config = $self->config->{$project};
-    return 1 if $config->{dependency_only};
+    my $source = $self->source($project);
+    return 1 if $source->dependency_only;
 
-    $self->_clone_project( $config );
+    $source->do_clone;
 
-    my %next = $self->source($project)->next( $config->{revision} );
+    my %next = $source->next;
     return 0 unless keys %next;
 
     my $revision = $next{'revision'};
 
-    my @libs = $self->_checkout_project($config, $revision);
+    my @libs = $source->do_checkout($revision);
     unless (@libs) {
         print "Skipping report for $project revision $revision due to build failure\n";
         $self->update_revision_in_config( $project => $revision );
@@ -255,7 +253,7 @@ sub _smoke_once {
     }
 
     print "running tests for $project\n";
-    my $test_glob = $config->{test_glob} || 't/*.t t/*/t/*.t';
+    my $test_glob = $source->test_glob;
     my $tmpfile = File::Temp->new( SUFFIX => ".tar.gz" );
     my $harness = TAP::Harness::Archive->new( {
             archive          => $tmpfile,
@@ -268,7 +266,7 @@ sub _smoke_once {
                 osvers    => $Config{osvers},
                 archname  => $Config{archname},
               },
-            jobs => ($config->{jobs} || $self->{jobs}),
+            jobs => ($source->jobs || $self->jobs),
             lib => \@libs,
         } );
     {
@@ -278,7 +276,7 @@ sub _smoke_once {
         $harness->runtests(glob($test_glob));
     }
 
-    $self->_clean_project( $config );
+    $source->do_clean;
 
     $self->_unroll_env_stack;
 
@@ -332,132 +330,19 @@ sub update_revision_in_config {
 
     my $tmp = LoadFile($self->config_file);
     $tmp->{$project}->{revision} = $self->config->{$project}->{revision} = $revision;
+    $self->source($project)->revision($revision);
     DumpFile($self->config_file, $tmp);
 }
 
 sub source {
     my $self = shift;
     my $project = shift;
-    $self->meta->{$project}{'source'} ||= Test::Chimps::Smoker::Source->new(
+    $self->sources->{$project} ||= Test::Chimps::Smoker::Source->new(
             %{ $self->config->{$project}{'repository'} },
             config => $self->config->{$project},
             smoker => $self,
         );
-    return $self->meta->{$project}{'source'};
-}
-
-sub _clone_project {
-    my $self = shift;
-    my $project = shift;
-
-    my $source = $self->source( $project->{'name'} );
-    if ( $source->cloned ) {
-        $source->chdir;
-        return 1;
-    }
-
-    my $tmpdir = tempdir("chimps-XXXXXXX", TMPDIR => 1);
-    $source->directory( $tmpdir );
-    $source->chdir;
-    $source->clone;
-
-    $source->cloned(1);
-
-    return 1;
-}
-
-sub _checkout_project {
-    my $self = shift;
-    my $project = shift;
-    my $revision = shift;
-
-    my $source = $self->source( $project->{'name'} );
-    $source->chdir;
-    $source->checkout( revision => $revision );
-
-    my $projectdir = File::Spec->catdir($source->directory, $project->{root_dir});
-
-    my @libs = map File::Spec->catdir($projectdir, $_),
-      'blib/lib', @{ $project->{libs} || [] };
-    $self->meta->{ $project->{'name'} }{'libs'} = [@libs];
-
-    my @otherlibs;
-    if (defined $project->{dependencies}) {
-        foreach my $dep (@{$project->{dependencies}}) {
-            print "processing dependency $dep\n";
-            my $config = $self->config->{ $dep };
-            $self->_clone_project( $config );
-            my @deplibs = $self->_checkout_project( $config );
-            if (@deplibs) {
-                push @otherlibs, @deplibs;
-            } else {
-                print "Dependency $dep failed; aborting";
-                return ();
-            }
-        }
-    }
-
-    $self->_push_onto_env_stack({
-        $project->{env}? (%{$project->{env}}) : (),
-        'CHIMPS_'. uc($project->{'name'}) .'_ROOT' => $projectdir,
-    });
-
-    my %seen;
-    @libs = grep {not $seen{$_}++} @libs, @otherlibs;
-
-    $source->chdir($project->{root_dir});
-
-    local $ENV{PERL5LIB} = join(":",@libs,$ENV{PERL5LIB});
-
-    if (defined( my $cmd = $project->{'configure_cmd'} )) {
-        my $ret = system($cmd);
-        if ($ret) {
-            print STDERR "Return value of $cmd from $projectdir = $ret\n"
-                if $ret;
-            return ();
-        }
-    }
-
-    if (defined( my $cmd = $project->{'clean_cmd'} )) {
-        print "Going to run project cleaner '$cmd'\n";
-        my @args = (
-            '--project', $project->{'name'},
-            '--config', $self->config_file,
-        );
-        open my $fh, '-|', join(' ', $cmd, @args)
-            or die "Couldn't run `". join(' ', $cmd, @args) ."`: $!";
-        $self->meta->{ $project->{'name'} }->{'cleaner'} = do { local $/; <$fh> };
-        close $fh;
-    }
-    return @libs;
-}
-
-sub _clean_project {
-    my $self = shift;
-    my $project = shift;
-
-    my $source = $self->source( $project->{'name'} );
-    $source->chdir;
-
-    if (defined( my $cmd = $project->{'clean_cmd'} )) {
-        my @args = (
-            '--project', $project->{'name'},
-            '--config', $self->config_file,
-            '--clean',
-        );
-        open my $fh, '|-', join(' ', $cmd, @args)
-            or die "Couldn't run `". join(' ', $cmd, @args) ."`: $!";
-        print $fh $self->meta->{ $project->{'name'} }->{'cleaner'};
-        close $fh;
-    }
-
-    $source->clean;
-
-    if (defined $project->{dependencies}) {
-        foreach my $dep (@{$project->{dependencies}}) {
-            $self->_clean_project( $self->config->{ $dep } );
-        }
-    }
+    return $self->sources->{$project};
 }
 
 sub _push_onto_env_stack {
@@ -515,26 +400,7 @@ sub _unroll_env_stack {
 
 sub DESTROY {
     my $self = shift;
-    $self->remove_checkouts;
-}
-
-sub remove_checkouts {
-    my $self = shift;
-
-    my $meta = $self->meta;
-    foreach my $source ( grep $_, map $_->{'source'}, values %$meta ) {
-        next unless my $dir = $source->directory;
-
-        _remove_tmpdir($dir);
-        $source->directory(undef);
-        $source->cloned(0);
-    }
-}
-
-sub _remove_tmpdir {
-    my $tmpdir = shift;
-    print "removing temporary directory $tmpdir\n";
-    rmtree($tmpdir, 0, 0);
+    $_->remove_checkout for grep defined, values %{ $self->sources };
 }
 
 =head1 ACCESSORS

@@ -60,7 +60,7 @@ sub clean {
 sub next {
     my $self = shift;
 
-    my $revision = $self->config->{revision};
+    my $revision = $self->revision;
     my $cmd = "svn log --limit 1 -q -r ". ($revision+1) .":HEAD ". $self->uri;
     my ($next, $committer, $committed_date) = (`$cmd` =~
             m/^r([0-9]+)\s+\|\s*(.*?)\s*\|\s*([^(]*)/m);
