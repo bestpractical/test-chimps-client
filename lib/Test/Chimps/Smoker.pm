@@ -669,6 +669,11 @@ be read from STDIN.
 
 An example you can find in a tarball of this distribution - F<examples/pg_dbs_cleaner.pl>.
 
+=item * jobs
+
+The number of parallel test processes to run.  If not specified, uses
+the value set on the smoker.
+
 =back
 
 =head1 REPORT VARIABLES
