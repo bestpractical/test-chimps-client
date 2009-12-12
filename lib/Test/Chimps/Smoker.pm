@@ -331,6 +331,8 @@ sub update_revision_in_config {
     my $self = shift;
     my ($project, $revision) = @_;
 
+    $revision = $self->source($project)->store_tested_revision($revision);
+
     my $tmp = LoadFile($self->config_file);
     $tmp->{$project}->{revision} = $self->config->{$project}->{revision} = $revision;
     $self->source($project)->revision($revision);

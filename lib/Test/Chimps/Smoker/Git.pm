@@ -12,21 +12,6 @@ sub _init {
     return $self->SUPER::_init( @_ );
 }
 
-sub revision_after {
-    my $self = shift;
-    my $revision = shift;
-
-    # stolen shamelessly from post-receive-email
-    # this probably still loops and needs some date support
-    # or a stash or shas to test
-    my $branch = $self->branch;
-    my $cmd = "git rev-parse --not --branches | grep -v \$(git rev-parse $branch) | git rev-list --stdin $revision..origin/$branch | tail -n 1";
-    my $next = `$cmd`;
-    chomp($next);
-
-    return $next;
-}
-
 sub committer {
     my $self = shift;
     my $revision = shift;
@@ -69,7 +54,13 @@ sub clone {
         $self->run_cmd( 'checkout', '-t', '-b', $self->branch, 'origin/'.$self->branch );
     }
 
-    $self->revision($self->branch . "^") unless $self->revision;
+    unless ($self->revision) {
+        # Default is that we've tested all parents of the current
+        # revision, but not the current revision itself.
+        my $branch = $self->branch;
+        my $rev = `git log $branch --format='\%P' -n 1`; chomp $rev;
+        $self->revision($rev);
+    }
 
     return 1;
 }
@@ -90,23 +81,40 @@ sub checkout {
 sub next {
     my $self = shift;
 
-    my $current = $self->revision;
+    # Get more revisions
+    $self->run_cmd('remote', 'update');
 
-    my $revision = $self->revision_after( $current );
-    unless ( $revision ) {
-        $self->run_cmd('pull');
-        $revision = $self->revision_after( $current );
-        return () unless $revision;
-    }
+    # In rev-list terms, "everything that isn't these commit, or an
+    # ancestor of them"
+    my $branch = $self->branch;
+    my @seen = map {"^$_"} split ' ', $self->revision;
+    my @revs = split /\n/, `git rev-list refs/remotes/origin/$branch @seen`;
 
-    my $committer = $self->committer($revision);
-    my $committed_date = $self->committed_date($revision);
+    return () unless @revs;
 
+    my $rev = pop @revs;
     return (
-        revision       => $revision,
-        committer      => $committer,
-        committed_date => $committed_date,
+        revision       => $rev,
+        committer      => $self->committer($rev),
+        committed_date => $self->committed_date($rev),
     );
+}
+
+sub store_tested_revision {
+    my $self = shift;
+    my $ref = shift;
+    my @oldrefs = split ' ', $self->revision;
+    my $branch = $self->branch;
+
+    # We need to determine if we can simplify the list of refs that
+    # we've seen.  If the new ref is good enough to block off all of
+    # the other pending refs (it's a merge commit, a child of all of
+    # them), then we only need to store it; otherwise, we append.
+    my $with_prev = `git rev-list refs/remotes/origin/$branch ^$ref @{[map {"^$_"} @oldrefs]}`;
+    my $only_new  = `git rev-list refs/remotes/origin/$branch ^$ref`;
+
+    return $ref if $with_prev eq $only_new;
+    return "$ref @oldrefs";
 }
 
 sub run_cmd {
