@@ -58,7 +58,7 @@ sub clone {
         # Default is that we've tested all parents of the current
         # revision, but not the current revision itself.
         my $branch = $self->branch;
-        my $rev = `git log $branch --format='\%P' -n 1`; chomp $rev;
+        my $rev = `git log $branch --pretty='format:\%P' -n 1`; chomp $rev;
         $self->revision($rev);
     }
 
