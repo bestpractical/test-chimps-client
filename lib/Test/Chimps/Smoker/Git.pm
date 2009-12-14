@@ -67,7 +67,7 @@ sub clone {
 
 sub clean {
     my $self = shift;
-    $self->run_cmd(qw(clean -fd));
+    $self->run_cmd(qw(clean -fxd));
     $self->run_cmd('checkout', $self->branch);
 }
 
