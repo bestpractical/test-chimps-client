@@ -184,7 +184,10 @@ sub checkout { return 1 }
 sub clean { return 1 }
 
 sub next { return () }
-sub store_tested_revision { return shift }
+sub store_tested_revision {
+    my $self = shift;
+    return @_;
+}
 
 sub run_cmd {
     my $self = shift;
