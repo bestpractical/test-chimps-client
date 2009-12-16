@@ -82,7 +82,7 @@ sub next {
     my $self = shift;
 
     # Get more revisions
-    $self->run_cmd('remote', 'update');
+    $self->run_cmd('remote', 'update', '-q');
 
     # In rev-list terms, "everything that isn't these commit, or an
     # ancestor of them"
