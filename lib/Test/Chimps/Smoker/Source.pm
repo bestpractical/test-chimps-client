@@ -165,6 +165,7 @@ sub do_clean {
     foreach my $dep (@{$self->dependencies}) {
         $self->smoker->source( $dep )->do_clean;
     }
+    $self->chdir;
 }
 
 sub remove_checkout {
