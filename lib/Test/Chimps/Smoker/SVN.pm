@@ -63,6 +63,9 @@ sub next {
     my $self = shift;
 
     my $revision = $self->revision;
+    my $info = `svn info @{[$self->uri]}`;
+    return () unless $info =~ /^Last Changed Rev: (d+)/m and $1 > $revision;
+
     my $cmd = "svn log --limit 1 -q -r ". ($revision+1) .":HEAD ". $self->uri;
     my ($next, $committer, $committed_date) = (`$cmd` =~
             m/^r([0-9]+)\s+\|\s*(.*?)\s*\|\s*([^(]*)/m);
