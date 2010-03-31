@@ -130,16 +130,22 @@ sub do_checkout {
         }
     }
 
-    if (defined( my $cmd = $self->clean_cmd )) {
-        print "Going to run project cleaner '$cmd'\n";
-        my @args = (
-            '--project', $self->name,
-            '--config', $self->smoker->config_file,
-        );
-        open my $fh, '-|', join(' ', $cmd, @args)
-            or die "Couldn't run `". join(' ', $cmd, @args) ."`: $!";
-        $self->cleaner( do { local $/; <$fh> } );
-        close $fh;
+    my $clean = $self->clean_cmd;
+    if (defined $clean) {
+        $clean = [ $clean ] unless ref $clean_cmd;
+        my @data;
+        for my $cmd ( @{$clean} ) {
+            print "Going to run project cleaner '$cmd'\n";
+            my @args = (
+                '--project', $self->name,
+                '--config', $self->smoker->config_file,
+            );
+            open my $fh, '-|', join(' ', $cmd, @args)
+                or die "Couldn't run `". join(' ', $cmd, @args) ."`: $!";
+            push @data, do { local $/; scalar <$fh> };
+            close $fh;
+        }
+        $self->cleaner( \@data );
     }
     return @libs;
 }
@@ -148,7 +154,10 @@ sub do_clean {
     my $self = shift;
     $self->chdir;
 
-    if (defined( my $cmd = $self->clean_cmd )) {
+    my $clean = $self->clean_cmd;
+    $clean = [ $clean ] if defined $clean and not ref $clean;
+    for my $pre (@{ $self->cleaner || [] }) {
+        my $cmd = shift @{$clean};
         my @args = (
             '--project', $self->name,
             '--config', $self->smoker->config_file,
@@ -156,7 +165,7 @@ sub do_clean {
         );
         open my $fh, '|-', join(' ', $cmd, @args)
             or die "Couldn't run `". join(' ', $cmd, @args) ."`: $!";
-        print $fh $self->cleaner;
+        print $fh $pre;
         close $fh;
     }
 
