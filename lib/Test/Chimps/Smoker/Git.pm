@@ -106,15 +106,11 @@ sub store_tested_revision {
     my @oldrefs = split ' ', $self->revision;
     my $branch = $self->branch;
 
-    # We need to determine if we can simplify the list of refs that
-    # we've seen.  If the new ref is good enough to block off all of
-    # the other pending refs (it's a merge commit, a child of all of
-    # them), then we only need to store it; otherwise, we append.
-    my $with_prev = `git rev-list refs/remotes/origin/$branch ^$ref @{[map {"^$_"} @oldrefs]}`;
-    my $only_new  = `git rev-list refs/remotes/origin/$branch ^$ref`;
-
-    return $ref if $with_prev eq $only_new;
-    return "$ref @oldrefs";
+    # Drop anything which is a parent of what we've tested.
+    my %parents;
+    my @commits = split /\n/, `git rev-list --parents $ref @oldrefs`;
+    $parents{$_} = 1 for map {my($sha,@parents) = split; @parents} @commits;
+    return join(" ", grep {not $parents{$_}} $ref, @oldrefs);
 }
 
 sub run_cmd {
