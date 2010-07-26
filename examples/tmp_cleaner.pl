@@ -11,7 +11,7 @@ unless ( grep $_ eq '--clean', @args ) {
 } else {
     my %skip;
     $skip{$_}++ for split /\n/, do {local $/; scalar <>};
-    my @destroy = grep {!$skip{$_}} file_list();
+    my @destroy = grep {!$skip{$_} and not m{^/tmp/chimps-}} file_list();
     for (@destroy) {
         if (-d $_) {
             rmdir($_) or die "Can't rmdir $_: $!";
