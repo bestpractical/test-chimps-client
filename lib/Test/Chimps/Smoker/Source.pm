@@ -154,21 +154,22 @@ sub do_clean {
     my $self = shift;
     $self->chdir;
 
-    my $clean = $self->clean_cmd;
-    $clean = [ $clean ] if defined $clean and not ref $clean;
-    for my $pre (@{ $self->cleaner || [] }) {
-        my $cmd = shift @{$clean};
-        my @args = (
-            '--project', $self->name,
-            '--config', $self->smoker->config_file,
-            '--clean',
-        );
-        open my $fh, '|-', join(' ', $cmd, @args)
-            or die "Couldn't run `". join(' ', $cmd, @args) ."`: $!";
-        print $fh $pre;
-        close $fh;
+    if (defined $self->clean_cmd) {
+        my @clean = ref $self->clean_cmd ? @{ $self->clean_cmd } : ($self->clean_cmd) ;
+        for my $pre (@{ $self->cleaner || [] }) {
+            my $cmd = shift @clean;
+            my @args = (
+                '--project', $self->name,
+                '--config', $self->smoker->config_file,
+                '--clean',
+            );
+            open my $fh, '|-', join(' ', $cmd, @args)
+                or die "Couldn't run `". join(' ', $cmd, @args) ."`: $!";
+            print $fh $pre;
+            close $fh or die "Error while closing: $!";
+        }
     }
-
+    $self->cleaner(undef);
     $self->clean;
 
     foreach my $dep (@{$self->dependencies}) {
