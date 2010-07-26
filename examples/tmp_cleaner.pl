@@ -14,9 +14,9 @@ unless ( grep $_ eq '--clean', @args ) {
     my @destroy = grep {!$skip{$_} and not m{^/tmp/chimps-}} file_list();
     for (@destroy) {
         if (-d $_) {
-            rmdir($_) or die "Can't rmdir $_: $!";
+            rmdir($_) or warn "Can't rmdir $_: $!";
         } else {
-            unlink($_) or die "Can't unlink $_: $!";
+            unlink($_) or warn "Can't unlink $_: $!";
         }
     }
 }
@@ -37,7 +37,7 @@ sub file_list {
         {
             preprocess => sub {
                 # Skip directories which had open files in them
-                return grep {not $open{$File::Find::dir."/".$_}} @_;
+                return grep {-w $_ and not $open{$File::Find::dir."/".$_}} @_;
             },
             wanted => sub {
                 # Everything else gets listed
