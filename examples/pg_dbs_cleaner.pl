@@ -17,7 +17,7 @@ unless ( grep $_ eq '--clean', @args ) {
     my %skip = map { chomp; $_ => 1 } <>;
 
     my @dbs = grep !$skip{ $_ }, list_dbs();
-    return unless @dbs;
+    exit unless @dbs;
 
     my $dbh = DBI->connect("dbi:Pg:dbname=template1","postgres","",{RaiseError => 1});
     $dbh->do("DROP DATABASE $_") for @dbs;
