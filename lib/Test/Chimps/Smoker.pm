@@ -257,7 +257,7 @@ sub _smoke_once {
 
     print "running tests for $project\n";
     my $test_glob = $source->test_glob;
-    my $tmpfile = File::Temp->new( TEMPLATE => "chimps-archive-XXXXX", SUFFIX => ".tar.gz" );
+    my $tmpfile = File::Temp->new( TEMPLATE => "chimps-archive-XXXXX", TMPDIR => 1, SUFFIX => ".tar.gz" );
     my $harness = TAP::Harness::Archive->new( {
             archive          => $tmpfile,
             extra_properties => {
