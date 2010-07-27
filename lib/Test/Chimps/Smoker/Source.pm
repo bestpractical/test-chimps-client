@@ -132,7 +132,7 @@ sub do_checkout {
 
     my $clean = $self->clean_cmd;
     if (defined $clean) {
-        $clean = [ $clean ] unless ref $clean_cmd;
+        $clean = [ $clean ] unless ref $clean;
         my @data;
         for my $cmd ( @{$clean} ) {
             print "Going to run project cleaner '$cmd'\n";
